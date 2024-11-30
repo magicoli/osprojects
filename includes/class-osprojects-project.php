@@ -17,6 +17,13 @@ class OSProjectsProject {
 
         // Add projects submenu
         add_action( 'admin_menu', array( $this, 'add_projects_submenu' ) );
+
+        // Add meta boxes for project post type
+        add_action( 'add_meta_boxes', array( $this, 'add_project_meta_boxes' ) );
+        add_action( 'save_post', array( $this, 'save_project_meta_boxes' ) );
+
+        // Use a content template for project post type
+        add_filter( 'the_content', array( $this, 'load_project_content_template' ), 20 );
     }
 
     /**
@@ -57,6 +64,69 @@ class OSProjectsProject {
         );
 
         register_post_type( 'project', $args );
+    }
+
+    /**
+     * Add meta boxes for project post type
+     */
+    public function add_project_meta_boxes( $post_type ) {
+        if ( 'project' != $post_type ) {
+            return;
+        }
+        add_meta_box(
+            'short_description_meta_box',
+            __( 'Short Description', 'osprojects' ),
+            array( $this, 'render_short_description_meta_box' ),
+            'project',
+            'normal',
+            'high'
+        );
+    }
+
+    /**
+     * Render the short description meta box
+     */
+    public function render_short_description_meta_box( $post ) {
+        wp_nonce_field( 'save_short_description', 'short_description_nonce' );
+        $short_description = get_post_meta( $post->ID, '_short_description', true );
+        echo '<input type="text" style="width:100%;" name="short_description" value="' . esc_attr( $short_description ) . '" />';
+    }
+
+    /**
+     * Save the meta boxes
+     */
+    public function save_project_meta_boxes( $post_id ) {
+        // Save short description
+        if ( ! isset( $_POST['short_description_nonce'] ) || ! wp_verify_nonce( $_POST['short_description_nonce'], 'save_short_description' ) ) {
+            return;
+        }
+
+        if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+            return;
+        }
+
+        if ( isset( $_POST['post_type'] ) && 'project' == $_POST['post_type'] ) {
+            if ( ! current_user_can( 'edit_post', $post_id ) ) {
+                return;
+            }
+        }
+
+        if ( isset( $_POST['short_description'] ) ) {
+            update_post_meta( $post_id, '_short_description', sanitize_text_field( $_POST['short_description'] ) );
+        }
+    }
+
+    /**
+     * Load the project content template
+     */
+    public function load_project_content_template( $content ) {
+        if ( is_singular( 'project' ) && in_the_loop() && is_main_query() ) {
+            ob_start();
+            require OSPROJECTS_PATH . 'templates/content-project.php';
+            $template_content = ob_get_clean();
+            return $template_content;
+        }
+        return $content;
     }
 
     /**
