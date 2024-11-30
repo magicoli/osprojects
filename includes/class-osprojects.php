@@ -47,7 +47,8 @@ class OSProjects {
             __( 'Dashboard', 'osprojects' ),
             'manage_options',
             'osprojects',
-            array( $this, 'dashboard' )
+            array( $this, 'dashboard' ),
+            0
         );
     }
 

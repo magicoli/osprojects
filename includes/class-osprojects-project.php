@@ -45,7 +45,7 @@ class OSProjectsProject {
             'public'             => true,
             'publicly_queryable' => true,
             'show_ui'            => true,
-            'show_in_menu'       => true,
+            'show_in_menu'       => false, // Ensure it does not create a separate main menu item
             'query_var'          => true,
             'rewrite'            => array( 'slug' => 'project' ),
             'capability_type'    => 'post',
@@ -67,7 +67,9 @@ class OSProjectsProject {
             __( 'Projects', 'osprojects' ),
             __( 'Projects', 'osprojects' ),
             'manage_options',
-            'edit.php?post_type=project'
+            'edit.php?post_type=project',
+            '',
+            1
         );
     }
 }

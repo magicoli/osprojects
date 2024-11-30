@@ -27,7 +27,7 @@ require_once OSPROJECTS_PATH . 'includes/class-osprojects.php';
 require_once OSPROJECTS_PATH . 'includes/class-osprojects-settings.php';
 require_once OSPROJECTS_PATH . 'includes/class-osprojects-project.php';
 
-// Initialize the plugin
+// Initialize the main plugin class
 $OSprojects = new OSProjects();
 
 // Initialize classes
