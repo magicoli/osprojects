@@ -22,6 +22,9 @@ class OSProjectsProject {
         add_action( 'add_meta_boxes', array( $this, 'add_project_meta_boxes' ) );
         add_action( 'save_post', array( $this, 'save_project_meta_boxes' ) );
 
+        // Move the short description meta box above the editor
+        add_action( 'edit_form_after_title', array( $this, 'render_short_description_after_title' ) );
+
         // Use a content template for project post type
         add_filter( 'the_content', array( $this, 'load_project_content_template' ), 20 );
     }
@@ -81,6 +84,15 @@ class OSProjectsProject {
             'normal',
             'high'
         );
+
+        add_meta_box(
+            'project_details_meta_box',
+            __( 'Project Details', 'osprojects' ),
+            array( $this, 'render_project_details_meta_box' ),
+            'project',
+            'normal',
+            'high'
+        );
     }
 
     /**
@@ -90,6 +102,50 @@ class OSProjectsProject {
         wp_nonce_field( 'save_short_description', 'short_description_nonce' );
         $short_description = get_post_meta( $post->ID, '_short_description', true );
         echo '<input type="text" style="width:100%;" name="short_description" value="' . esc_attr( $short_description ) . '" />';
+    }
+
+    /**
+     * Render the project details meta box
+     */
+    public function render_project_details_meta_box( $post ) {
+        wp_nonce_field( 'save_project_details', 'project_details_nonce' );
+        $project_website = get_post_meta( $post->ID, '_osprojects_project_website', true );
+        $project_repository = get_post_meta( $post->ID, '_osprojects_project_repository', true );
+        $project_license = get_post_meta( $post->ID, '_osprojects_project_license', true );
+        $stable_release_version = get_post_meta( $post->ID, '_osprojects_stable_release_version', true );
+        $stable_release_link = get_post_meta( $post->ID, '_osprojects_stable_release_link', true );
+        $development_release_version = get_post_meta( $post->ID, '_osprojects_development_release_version', true );
+        $development_release_link = get_post_meta( $post->ID, '_osprojects_development_release_link', true );
+
+        echo '<label for="osprojects_project_website">' . __( 'Project Website', 'osprojects' ) . '</label>';
+        echo '<input type="text" style="width:100%;" name="osprojects_project_website" value="' . esc_attr( $project_website ) . '" />';
+
+        echo '<label for="osprojects_project_repository">' . __( 'Project Repository', 'osprojects' ) . '</label>';
+        echo '<input type="text" style="width:100%;" name="osprojects_project_repository" value="' . esc_attr( $project_repository ) . '" />';
+
+        echo '<label for="osprojects_project_license">' . __( 'License', 'osprojects' ) . '</label>';
+        echo '<input type="text" style="width:100%;" name="osprojects_project_license" value="' . esc_attr( $project_license ) . '" />';
+
+        echo '<label for="osprojects_stable_release_version">' . __( 'Stable Release Version', 'osprojects' ) . '</label>';
+        echo '<input type="text" style="width:100%;" name="osprojects_stable_release_version" value="' . esc_attr( $stable_release_version ) . '" />';
+
+        echo '<label for="osprojects_stable_release_link">' . __( 'Stable Release Link', 'osprojects' ) . '</label>';
+        echo '<input type="text" style="width:100%;" name="osprojects_stable_release_link" value="' . esc_attr( $stable_release_link ) . '" />';
+
+        echo '<label for="osprojects_development_release_version">' . __( 'Development Release Version', 'osprojects' ) . '</label>';
+        echo '<input type="text" style="width:100%;" name="osprojects_development_release_version" value="' . esc_attr( $development_release_version ) . '" />';
+
+        echo '<label for="osprojects_development_release_link">' . __( 'Development Release Link', 'osprojects' ) . '</label>';
+        echo '<input type="text" style="width:100%;" name="osprojects_development_release_link" value="' . esc_attr( $development_release_link ) . '" />';
+    }
+
+    /**
+     * Render the short description field after the title
+     */
+    public function render_short_description_after_title( $post ) {
+        if ( $post->post_type == 'project' ) {
+            $this->render_short_description_meta_box( $post );
+        }
     }
 
     /**
@@ -113,6 +169,39 @@ class OSProjectsProject {
 
         if ( isset( $_POST['short_description'] ) ) {
             update_post_meta( $post_id, '_short_description', sanitize_text_field( $_POST['short_description'] ) );
+        }
+
+        // Save project details
+        if ( ! isset( $_POST['project_details_nonce'] ) || ! wp_verify_nonce( $_POST['project_details_nonce'], 'save_project_details' ) ) {
+            return;
+        }
+
+        if ( isset( $_POST['osprojects_project_website'] ) ) {
+            update_post_meta( $post_id, '_osprojects_project_website', sanitize_text_field( $_POST['osprojects_project_website'] ) );
+        }
+
+        if ( isset( $_POST['osprojects_project_repository'] ) ) {
+            update_post_meta( $post_id, '_osprojects_project_repository', sanitize_text_field( $_POST['osprojects_project_repository'] ) );
+        }
+
+        if ( isset( $_POST['osprojects_project_license'] ) ) {
+            update_post_meta( $post_id, '_osprojects_project_license', sanitize_text_field( $_POST['osprojects_project_license'] ) );
+        }
+
+        if ( isset( $_POST['osprojects_stable_release_version'] ) ) {
+            update_post_meta( $post_id, '_osprojects_stable_release_version', sanitize_text_field( $_POST['osprojects_stable_release_version'] ) );
+        }
+
+        if ( isset( $_POST['osprojects_stable_release_link'] ) ) {
+            update_post_meta( $post_id, '_osprojects_stable_release_link', esc_url_raw( $_POST['osprojects_stable_release_link'] ) );
+        }
+
+        if ( isset( $_POST['osprojects_development_release_version'] ) ) {
+            update_post_meta( $post_id, '_osprojects_development_release_version', sanitize_text_field( $_POST['osprojects_development_release_version'] ) );
+        }
+
+        if ( isset( $_POST['osprojects_development_release_link'] ) ) {
+            update_post_meta( $post_id, '_osprojects_development_release_link', esc_url_raw( $_POST['osprojects_development_release_link'] ) );
         }
     }
 
