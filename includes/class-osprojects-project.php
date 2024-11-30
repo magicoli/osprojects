@@ -52,8 +52,8 @@ class OSProjectsProject {
             'has_archive'        => true,
             'hierarchical'       => false,
             'menu_position'      => null,
-            'supports'           => array( 'title', 'editor', 'author', 'thumbnail', 'excerpt', 'comments', 'custom-fields', 'revisions', 'page-attributes', 'post-formats' ),
-            'show_in_rest'       => true // Enable block editor support
+            'supports'           => array( 'title', 'editor', 'thumbnail', 'excerpt', 'comments', 'revisions' ),
+            // 'show_in_rest'       => true // Temporary disabled due to a bug in Gutenberg
         );
 
         register_post_type( 'project', $args );
