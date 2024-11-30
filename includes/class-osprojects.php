@@ -40,16 +40,17 @@ class OSProjects {
             6
         );
 
-        // Add dashboard
-        add_submenu_page(
-            'osprojects',
-            __( 'Dashboard', 'osprojects' ),
-            __( 'Dashboard', 'osprojects' ),
-            'manage_options',
-            'osprojects',
-            array( $this, 'dashboard' ),
-            0
-        );
+        # Temporary disabled until fully implemented
+        // // Add dashboard
+        // add_submenu_page(
+        //     'osprojects',
+        //     __( 'Dashboard', 'osprojects' ),
+        //     __( 'Dashboard', 'osprojects' ),
+        //     'manage_options',
+        //     'osprojects',
+        //     array( $this, 'dashboard' ),
+        //     0
+        // );
     }
 
     /**
