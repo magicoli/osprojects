@@ -211,7 +211,7 @@ class OSProjectsProject {
     public function load_project_content_template( $content ) {
         if ( is_singular( 'project' ) && in_the_loop() && is_main_query() ) {
             ob_start();
-            require OSPROJECTS_PATH . 'templates/content-project.php';
+            require OSPROJECTS_PATH . 'templates/project-content.php';
             $template_content = ob_get_clean();
             return $template_content;
         }
