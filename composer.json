@@ -1,6 +1,6 @@
 {
-    "name": "magicoli/osprojects",
-    "description": "Showcase open source projects",
+    "name": "magicoli/wrap",
+    "description": "WordPress-based authentication for third-party applications via .htaccess",
     "type": "wordpress-plugin",
     "license": "AGPL-3.0-or-later",
     "authors": [
@@ -12,7 +12,17 @@
     "require": {
         "czproject/git-php": "^4.3"
     },
+    "require-dev": {
+        "wp-coding-standards/wpcs": "^3.1",
+        "magicoli/php-bump-library": "^1.0"
+    },
     "config": {
-        "vendor-dir": "lib"
-    }
+        "vendor-dir": "lib",
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    },
+    "scripts": {
+        "bump-version": "vendor/magicoli/php-bump-library/vendor/bin/robo --load-from=vendor/magicoli/php-bump-library/RoboFile.php bump:version"
+    }    
 }
