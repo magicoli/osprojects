@@ -3,7 +3,7 @@
         'name' => 'magicoli/osprojects',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => '59c55e455a14d4cdef019306be070598fe2b666a',
+        'reference' => '0241ba78c0be72fdee80d258f5bcd7fc1f21aa5a',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -22,7 +22,7 @@
         'magicoli/osprojects' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '59c55e455a14d4cdef019306be070598fe2b666a',
+            'reference' => '0241ba78c0be72fdee80d258f5bcd7fc1f21aa5a',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
