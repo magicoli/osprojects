@@ -30,6 +30,9 @@ class OSProjectsProject {
 
         // Use a content template for project post type
         add_filter( 'the_content', array( $this, 'load_project_content_template' ), 20 );
+
+        // Disable "Archives: " prefix on projects archive page
+        add_filter( 'get_the_archive_title', array( $this, 'get_archive_title' ) );
     }
 
     /**
@@ -53,6 +56,9 @@ class OSProjectsProject {
             'not_found_in_trash' => __( 'No projects found in Trash.', 'osprojects' )
         );
 
+        $options = get_option( 'osprojects-settings' );
+        $project_url_prefix = isset( $options['project_url_prefix'] ) ? $options['project_url_prefix'] : OSProjectsSettings::DEFAULT_PROJECT_URL_PREFIX;
+
         $args = array(
             'labels'             => $labels,
             'public'             => true,
@@ -60,9 +66,9 @@ class OSProjectsProject {
             'show_ui'            => true,
             'show_in_menu'       => false, // Ensure it does not create a separate main menu item
             'query_var'          => true,
-            'rewrite'            => array( 'slug' => 'project' ),
+            'rewrite'            => array( 'slug' => $project_url_prefix ),
             'capability_type'    => 'post',
-            'has_archive'        => true,
+            'has_archive'        => $project_url_prefix,
             'hierarchical'       => false,
             'menu_position'      => null,
             'supports'           => array( 'title', 'editor', 'thumbnail', 'excerpt', 'comments', 'revisions' ),
@@ -216,5 +222,15 @@ class OSProjectsProject {
             null,
             1
         );
+    }
+
+    /**
+     * Remove "Archives: " prefix from the archive title
+     */
+    public function get_archive_title( $title ) {
+        if ( is_post_type_archive( 'project' ) ) {
+            $title = post_type_archive_title( '', false );
+        }
+        return $title;
     }
 }
