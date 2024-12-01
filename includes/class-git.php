@@ -42,6 +42,7 @@ class OSProjectsGit
     private $release_date = null;
     private $download_url = null;
     private $license = null;
+    private $fileContents = [];
     
     public function __construct($repo_url)
     {
@@ -77,6 +78,20 @@ class OSProjectsGit
         add_action('shutdown', array($this, 'cleanup'));
 
         $this->repo_url = $repo_url;
+        $this->loadRepositoryFiles();
+    }
+
+    private function loadRepositoryFiles()
+    {
+        $files = ['composer.json', 'package.json', 'readme.txt', 'README.md'];
+        foreach ($files as $file) {
+            $filePath = $this->repoPath . '/' . $file;
+            if (file_exists($filePath)) {
+                $this->fileContents[$file] = file_get_contents($filePath);
+            } else {
+                $this->fileContents[$file] = null;
+            }
+        }
     }
 
     public function last_commit()
@@ -228,9 +243,8 @@ class OSProjectsGit
     {
         $standard_files = ['composer.json', 'package.json', 'readme.txt'];
         foreach ($standard_files as $file) {
-            $file_path = $this->repoPath . '/' . $file;
-            if (file_exists($file_path)) {
-                $content = file_get_contents($file_path);
+            $content = $this->fileContents[$file];
+            if ($content) {
                 if ($file === 'composer.json' || $file === 'package.json') {
                     $json = json_decode($content, true);
                     if (isset($json['license'])) {
@@ -265,6 +279,24 @@ class OSProjectsGit
         }
 
         return null;
+    }
+
+    public function get_project_type()
+    {
+        if (!empty($this->fileContents['composer.json'])) {
+            $json = json_decode($this->fileContents['composer.json'], true);
+            if (isset($json['type'])) {
+                return $json['type'];
+            }
+        }
+        if (!empty($this->fileContents['package.json'])) {
+            $json = json_decode($this->fileContents['package.json'], true);
+            if (isset($json['type'])) {
+                return $json['type'];
+            }
+        }
+        // ...additional logic based on readme files...
+        return 'unknown';
     }
 
     public function license()
