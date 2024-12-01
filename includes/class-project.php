@@ -39,6 +39,12 @@ class OSProjectsProject {
 
         // Enqueue admin scripts with AJAX localization
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
+
+        // Register taxonomy
+        add_action( 'init', array( $this, 'register_taxonomy' ) );
+
+        // Add set_active_submenu action
+        add_action( 'admin_head', array( $this, 'set_active_submenu' ) );
     }
 
     /**
@@ -83,6 +89,36 @@ class OSProjectsProject {
         );
 
         register_post_type( 'project', $args );
+    }
+
+    /**
+     * Register the "project_category" taxonomy
+     */
+    public function register_taxonomy() {
+        $labels = array(
+            'name'              => __( 'Categories', 'osprojects' ),
+            'singular_name'     => __( 'Category', 'osprojects' ),
+            'search_items'      => __( 'Search Categories', 'osprojects' ),
+            'all_items'         => __( 'All Categories', 'osprojects' ),
+            'parent_item'       => __( 'Parent Category', 'osprojects' ),
+            'parent_item_colon' => __( 'Parent Category:', 'osprojects' ),
+            'edit_item'         => __( 'Edit Category', 'osprojects' ),
+            'update_item'       => __( 'Update Category', 'osprojects' ),
+            'add_new_item'      => __( 'Add New Category', 'osprojects' ),
+            'new_item_name'     => __( 'New Category Name', 'osprojects' ),
+            'menu_name'         => __( 'Categories', 'osprojects' ),
+        );
+
+        $args = array(
+            'hierarchical'      => true,
+            'labels'            => $labels,
+            'show_ui'           => true,
+            'show_admin_column' => true,
+            'query_var'         => true,
+            'rewrite'           => array( 'slug' => 'project-category' ),
+        );
+
+        register_taxonomy( 'project_category', 'project', $args );
     }
 
     /**
@@ -279,7 +315,7 @@ class OSProjectsProject {
     }
 
     /**
-     * Add projects submenu
+     * Add submenu pages for the osprojects admin menu
      */
     public function add_projects_submenu() {
         add_submenu_page(
@@ -290,6 +326,16 @@ class OSProjectsProject {
             'edit.php?post_type=project',
             null,
             1
+        );
+
+        // Add "Categories" submenu
+        add_submenu_page(
+            'osprojects',
+            __( 'Categories', 'osprojects' ),
+            __( 'Categories', 'osprojects' ),
+            'manage_options',
+            'edit-tags.php?taxonomy=project_category&post_type=project',
+            null
         );
     }
 
@@ -345,5 +391,17 @@ class OSProjectsProject {
         );
 
         wp_send_json_success( $data );
+    }
+
+    /**
+     * Set active submenu for project categories
+     */
+    public function set_active_submenu() {
+        global $parent_file, $submenu_file, $current_screen;
+
+        if ( isset( $current_screen->taxonomy ) && $current_screen->taxonomy === 'project_category' ) {
+            $parent_file = 'osprojects';
+            $submenu_file = 'edit-tags.php?taxonomy=project_category&post_type=project';
+        }
     }
 }
