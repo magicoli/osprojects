@@ -68,7 +68,7 @@ class OSProjectsGit
                 // '--single-branch' => null, // Removed to fetch all branches and tags
             ]);
         } catch (CzProject\GitPhp\GitException $e) {
-            error_log ( 'Git clone failed: ' . $e->getMessage() );
+            // error_log ( 'Git clone failed: ' . $e->getMessage() );
             $this->repository = null;
             return;
         }
@@ -224,17 +224,54 @@ class OSProjectsGit
         );
     }
 
-    public function license()
+    public function get_license_info()
     {
+        $standard_files = ['composer.json', 'package.json', 'readme.txt'];
+        foreach ($standard_files as $file) {
+            $file_path = $this->repoPath . '/' . $file;
+            if (file_exists($file_path)) {
+                $content = file_get_contents($file_path);
+                if ($file === 'composer.json' || $file === 'package.json') {
+                    $json = json_decode($content, true);
+                    if (isset($json['license'])) {
+                        return [
+                            'name' => is_array($json['license']) ? implode(', ', $json['license']) : $json['license'],
+                            'url' => isset($json['license_url']) ? $json['license_url'] : '',
+                        ];
+                    }
+                } elseif ($file === 'readme.txt') {
+                    if (preg_match('/^License:\s*(.+)$/mi', $content, $matches)) {
+                        return [
+                            'name' => trim($matches[1]),
+                            'url' => '',
+                        ];
+                    }
+                }
+            }
+        }
+
+        // Fallback to LICENSE file
         $license_files = ['LICENSE', 'LICENSE.md', 'LICENSE.txt'];
         foreach ($license_files as $file) {
             $license_path = $this->repoPath . '/' . $file;
             if (file_exists($license_path)) {
                 $content = file_get_contents($license_path);
-                // Return only the first line of the license
                 $first_line = strtok($content, "\n");
-                return trim($first_line);
+                return [
+                    'name' => trim($first_line),
+                    'url' => '',
+                ];
             }
+        }
+
+        return null;
+    }
+
+    public function license()
+    {
+        $license_info = $this->get_license_info();
+        if ($license_info && !empty($license_info['name'])) {
+            return $license_info['name'];
         }
         return;
     }
