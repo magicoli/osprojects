@@ -67,4 +67,29 @@ class OSProjects {
     public function load_plugin_textdomain() {
         load_plugin_textdomain( 'osprojects', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
     }
+
+    /**
+     * Get option from osprojects-settings
+     *
+     * @param string $option_name
+     * @param mixed $default
+     * @return mixed
+     */
+    public static function get_option($option_name, $default = false) {
+        $options = get_option('osprojects-settings');
+        return isset($options[$option_name]) ? $options[$option_name] : $default;
+    }
+
+    /**
+     * Update option in osprojects-settings
+     *
+     * @param string $option_name
+     * @param mixed $value
+     * @return bool
+     */
+    public static function update_option($option_name, $value) {
+        $options = get_option('osprojects-settings');
+        $options[$option_name] = $value;
+        return update_option('osprojects-settings', $options);
+    }
 }

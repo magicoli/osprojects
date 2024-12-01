@@ -63,7 +63,7 @@ class OSProjectsProject {
             'hierarchical'       => false,
             'menu_position'      => null,
             'supports'           => array( 'title', 'editor', 'thumbnail', 'excerpt', 'comments', 'revisions' ),
-            // 'show_in_rest'       => true // Temporary disabled due to a bug in Gutenberg
+            'show_in_rest'       => OSProjects::get_option('enable_gutenberg') // Use the OSProjects method for show_in_rest
         );
 
         register_post_type( 'project', $args );
