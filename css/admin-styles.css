@@ -11,3 +11,16 @@
 .osprojects-field input {
     flex: 1;
 }
+
+/* filepath: /home/magic/domains/magiiic.org/www/w/wp-content/plugins/osprojects/css/admin-styles.css */
+.notification {
+    color: #0073aa; /* WordPress admin blue for informational messages */
+    font-weight: bold;
+    margin-top: 5px;
+}
+.notification.error {
+    color: #dc3232; /* Red for errors */
+}
+.notification.loading {
+    color: #ffba00; /* Yellow for loading */
+}

@@ -13,17 +13,18 @@ $last_commit_html = get_post_meta( $post->ID, 'osp_project_last_commit_html', tr
         </th>
         <td>
             <input type="url" name="osp_project_repository" id="osp_project_repository" value="<?php echo esc_attr( $project_repository ); ?>" class="regular-text" />
+            <p id="osp_project_repository_notification" class="description notification" aria-live="polite"></p>
             <p>
                 <label><?php _e( 'Release: ', 'osprojects' ); ?></label>
-                <?php echo $project_release; ?>
+                <span id="osp_project_release"><?php echo $project_release; ?></span>
             </p>
             <p>
                 <label><?php _e( 'Last Commit: ', 'osprojects' ); ?></label>
-                <?php echo $last_commit_html; ?>
+                <span id="osp_project_last_commit"><?php echo $last_commit_html; ?></span>
             </p>
             <p>
                 <label><?php _e( 'License: ', 'osprojects' ); ?></label>
-                <?php echo esc_html( $project_license ); ?>
+                <span id="osp_project_license"><?php echo esc_html( $project_license ); ?></span>
             </p>
         </td>
     </tr>

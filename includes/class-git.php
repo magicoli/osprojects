@@ -236,7 +236,7 @@ class OSProjectsGit
                 return trim($first_line);
             }
         }
-        return 'License file not found.';
+        return;
     }
 
     public function cleanup()

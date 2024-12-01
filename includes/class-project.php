@@ -33,6 +33,12 @@ class OSProjectsProject {
 
         // Disable "Archives: " prefix on projects archive page
         add_filter( 'get_the_archive_title', array( $this, 'get_archive_title' ) );
+
+        // Hook AJAX handler
+        add_action( 'wp_ajax_osprojects_fetch_git_data', array( $this, 'ajax_fetch_git_data' ) );
+
+        // Enqueue admin scripts with AJAX localization
+        add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
     }
 
     /**
@@ -128,7 +134,37 @@ class OSProjectsProject {
     public function enqueue_admin_styles( $hook_suffix ) {
         global $post_type;
         if ( 'project' === $post_type && ( 'post.php' === $hook_suffix || 'post-new.php' === $hook_suffix ) ) {
-            wp_enqueue_style( 'osprojects-admin-styles', OSPROJECTS_PLUGIN_URL . 'css/admin-styles.css' );
+            wp_enqueue_style( 'osprojects-admin-styles', OSPROJECTS_PLUGIN_URL . 'css/admin-styles.css', array(), '1.0'.time() );
+        }
+    }
+
+    /**
+     * Enqueue admin scripts
+     */
+    public function enqueue_admin_scripts( $hook_suffix ) {
+        global $post_type;
+        if ( 'project' === $post_type && in_array( $hook_suffix, array( 'post.php', 'post-new.php' ) ) ) {
+            wp_enqueue_script(
+                'osprojects-admin-scripts',
+                OSPROJECTS_PLUGIN_URL . 'js/admin-scripts.js',
+                array(), // No dependencies
+                '1.0' . time(), // Version
+                true
+            );
+
+            $repository_url = '';
+            if ( 'post.php' === $hook_suffix && isset( $_GET['post'] ) ) {
+                $post_id = intval( $_GET['post'] );
+                $repository_url = get_post_meta( $post_id, 'osp_project_repository', true );
+            }
+
+            // Localize script with AJAX URL, repository URL, and updated nonce
+            wp_localize_script( 'osprojects-admin-scripts', 'OSProjectsAjax', array(
+                'ajax_url'       => admin_url( 'admin-ajax.php' ),
+                'repository_url' => $repository_url,
+                'nonce'          => wp_create_nonce( 'osprojects_fetch_git_data' ), // Updated nonce action
+            ) );
+
         }
     }
 
@@ -249,5 +285,50 @@ class OSProjectsProject {
             $title = post_type_archive_title( '', false );
         }
         return $title;
+    }
+
+    /**
+     * AJAX handler to fetch Git data
+     */
+    public function ajax_fetch_git_data() {
+        error_log( __FUNCTION__ . ' called' );
+        
+        // Verify nonce with updated action name
+        if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'osprojects_fetch_git_data' ) ) { // Updated nonce action
+            wp_send_json_error( 'Invalid nonce.' );
+        }
+
+        // Check if repository_url is set
+        if ( ! isset( $_POST['repository_url'] ) ) {
+            wp_send_json_error( 'Repository URL is missing.' );
+        }
+
+        $repository_url = sanitize_text_field( $_POST['repository_url'] );
+
+        // Validate the repository URL
+        if ( ! filter_var( $repository_url, FILTER_VALIDATE_URL ) ) {
+            wp_send_json_error( 'Invalid Repository URL.' );
+        }
+
+        // Instantiate OSProjectsGit with the repository URL
+        $git = new OSProjectsGit( $repository_url );
+
+        // Fetch data using OSProjectsGit methods
+        $license = $git->license();
+        $version = $git->version();
+        $release_date = $git->release_date();
+        $last_release_html = $git->last_release_html();
+        $last_commit_html = $git->last_commit_html();
+
+        // Prepare the response data
+        $data = array(
+            'license'                  => $license,
+            'version'                  => $version,
+            'release_date'             => $release_date,
+            'last_release_html'        => $last_release_html,
+            'last_commit_html'         => $last_commit_html,
+        );
+
+        wp_send_json_success( $data );
     }
 }
