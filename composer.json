@@ -1,0 +1,17 @@
+{
+    "name": "magicoli/osprojects",
+    "description": "Showcase open source projects",
+    "type": "wordpress-plugin",
+    "license": "AGPL-3.0-or-later",
+    "authors": [
+        {
+            "name": "Olivier van Helden",
+            "email": "olivier@van-helden.net"
+        }
+    ],
+    "require": {
+    },
+    "config": {
+        "vendor-dir": "lib"
+    }
+}
