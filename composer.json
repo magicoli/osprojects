@@ -10,6 +10,7 @@
         }
     ],
     "require": {
+        "czproject/git-php": "^4.3"
     },
     "config": {
         "vendor-dir": "lib"
