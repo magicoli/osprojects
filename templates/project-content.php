@@ -9,36 +9,31 @@ if ( ! defined( 'WPINC' ) ) {
 }
 
 $project_fields = array(
-    'project_website' => __( 'Project Website', 'osprojects' ),
-    'project_repository' => __( 'Project Repository', 'osprojects' ),
-    'project_license' => __( 'License', 'osprojects' ),
-    'stable_release_version' => __( 'Stable Release Version', 'osprojects' ),
-    'stable_release_link' => __( 'Stable Release Link', 'osprojects' ),
-    'development_release_version' => __( 'Development Release Version', 'osprojects' ),
-    'development_release_link' => __( 'Development Release Link', 'osprojects' ),
+    'osp_project_repository' => __( 'Repository', 'osprojects' ),
+    'osp_project_last_release_html' => __( 'Release', 'osprojects' ),
+    'osp_project_last_commit_html' => __( 'Last Commit', 'osprojects' ),
+    'osp_project_license' => __( 'License', 'osprojects' ),
 );
 ?>
 
 <div>
     <h2 class="short_description">
-        <?php echo esc_html( get_post_meta( get_the_ID(), '_short_description', true ) ); ?>
+        <?php echo esc_html( get_post_meta( get_the_ID(), 'osp_project_shortdesc', true ) ); ?>
     </h2>
     <table>
-        <?php foreach ( $project_fields as $field => $label ) : 
-            $value = get_post_meta( get_the_ID(), '_osprojects_' . $field, true );
+        <?php foreach ( $project_fields as $meta_key => $label ) : 
+            $value = get_post_meta( get_the_ID(), $meta_key, true );
             if ( ! empty( $value ) ) : ?>
                 <tr>
                     <th><?php echo $label; ?></th>
                     <td>
-                        <?php if ( in_array( $field, array( 'stable_release_link', 'development_release_link' ) ) ) : 
-                            $version_field = str_replace( '_link', '_version', $field );
-                            $version = get_post_meta( get_the_ID(), '_osprojects_' . $version_field, true );
-                            if ( ! empty( $version ) ) : ?>
-                                <a href="<?php echo esc_url( $value ); ?>"><?php echo esc_html( $version ); ?></a>
-                            <?php endif; 
+                        <?php 
+                        if ( in_array( $meta_key, array( 'osp_project_last_release_html', 'osp_project_last_commit_html' ) ) ) : 
+                            echo $value;
                         else : 
                             echo esc_html( $value ); 
-                        endif; ?>
+                        endif; 
+                        ?>
                     </td>
                 </tr>
             <?php endif; 

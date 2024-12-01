@@ -1,5 +1,5 @@
 <?php
-$project_website = get_post_meta( $post->ID, '_osprojects_project_website', true );
+$project_website = get_post_meta( $post->ID, 'osp_project_website', true );
 ?>
 
 <table class="form-table">

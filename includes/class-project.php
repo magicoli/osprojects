@@ -26,7 +26,7 @@ class OSProjectsProject {
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_styles' ) );
 
         // Move the short description meta box above the editor
-        add_action( 'edit_form_after_title', array( $this, 'render_short_description_after_title' ) );
+        add_action( 'edit_form_after_title', array( $this, 'renderosp_project_shortdesc_after_title' ) );
 
         // Use a content template for project post type
         add_filter( 'the_content', array( $this, 'load_project_content_template' ), 20 );
@@ -135,7 +135,7 @@ class OSProjectsProject {
     /**
      * Render the short description field after the title
      */
-    public function render_short_description_after_title( $post ) {
+    public function renderosp_project_shortdesc_after_title( $post ) {
         if ( $post->post_type == 'project' ) {
             // No need to render the short description meta box separately
         }
@@ -167,32 +167,54 @@ class OSProjectsProject {
         }
 
         // Save the fields.
-        if ( isset( $_POST['osprojects_project_website'] ) ) {
-            update_post_meta( $post_id, '_osprojects_project_website', sanitize_text_field( $_POST['osprojects_project_website'] ) );
+        if ( isset( $_POST['osp_project_website'] ) ) {
+            update_post_meta( $post_id, 'osp_project_website', sanitize_text_field( $_POST['osp_project_website'] ) );
         }
 
-        if ( isset( $_POST['osprojects_project_repository'] ) ) {
-            update_post_meta( $post_id, '_osprojects_project_repository', sanitize_text_field( $_POST['osprojects_project_repository'] ) );
+        if ( isset( $_POST['osp_project_repository'] ) ) {
+            $repository_url = sanitize_text_field( $_POST['osp_project_repository'] );
+            update_post_meta( $post_id, 'osp_project_repository', $repository_url );
+
+            // Instantiate OSProjectsGit with the repository URL
+            $git = new OSProjectsGit( $repository_url );
+
+            // Fetch data using OSProjectsGit methods
+            $license = $git->license();
+            $version = $git->version();
+            $release_date = $git->release_date();
+            $last_release_html = $git->last_release_html();
+            $last_commit_html = $git->last_commit_html();
+            error_log( '
+            License: ' . $license . '
+            Release HTML: ' . $last_release_html . '
+            Last Commit HTML: ' . $last_commit_html
+            );
+
+            // Save fetched data as post meta
+            update_post_meta( $post_id, 'osp_project_license', sanitize_text_field( $license ) );
+            update_post_meta( $post_id, 'osp_project_stable_release_version', sanitize_text_field( $version ) );
+            update_post_meta( $post_id, 'osp_project_last_release_html', wp_kses_post( $last_release_html ) );
+            update_post_meta( $post_id, 'osp_project_last_commit_html', wp_kses_post( $last_commit_html ) );
         }
 
-        if ( isset( $_POST['osprojects_project_license'] ) ) {
-            update_post_meta( $post_id, '_osprojects_project_license', sanitize_text_field( $_POST['osprojects_project_license'] ) );
+        if ( isset( $_POST['osp_project_license'] ) ) {
+            update_post_meta( $post_id, 'osp_project_license', sanitize_text_field( $_POST['osp_project_license'] ) );
         }
 
-        if ( isset( $_POST['osprojects_stable_release_version'] ) ) {
-            update_post_meta( $post_id, '_osprojects_stable_release_version', sanitize_text_field( $_POST['osprojects_stable_release_version'] ) );
+        if ( isset( $_POST['osp_project_stable_release_version'] ) ) {
+            update_post_meta( $post_id, 'osp_project_stable_release_version', sanitize_text_field( $_POST['osp_project_stable_release_version'] ) );
         }
 
-        if ( isset( $_POST['osprojects_stable_release_link'] ) ) {
-            update_post_meta( $post_id, '_osprojects_stable_release_link', esc_url_raw( $_POST['osprojects_stable_release_link'] ) );
+        if ( isset( $_POST['osp_project_stable_release_link'] ) ) {
+            update_post_meta( $post_id, 'osp_project_stable_release_link', esc_url_raw( $_POST['osp_project_stable_release_link'] ) );
         }
 
-        if ( isset( $_POST['osprojects_development_release_version'] ) ) {
-            update_post_meta( $post_id, '_osprojects_development_release_version', sanitize_text_field( $_POST['osprojects_development_release_version'] ) );
+        if ( isset( $_POST['osp_project_development_release_version'] ) ) {
+            update_post_meta( $post_id, 'osp_project_development_release_version', sanitize_text_field( $_POST['osp_project_development_release_version'] ) );
         }
 
-        if ( isset( $_POST['osprojects_development_release_link'] ) ) {
-            update_post_meta( $post_id, '_osprojects_development_release_link', esc_url_raw( $_POST['osprojects_development_release_link'] ) );
+        if ( isset( $_POST['osp_project_development_release_link'] ) ) {
+            update_post_meta( $post_id, 'osp_project_development_release_link', esc_url_raw( $_POST['osp_project_development_release_link'] ) );
         }
     }
 
