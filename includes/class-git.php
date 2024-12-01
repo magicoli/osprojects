@@ -7,6 +7,29 @@ if(!defined('OSPROJECTS_PLUGIN_PATH')){
     define('OSPROJECTS_PLUGIN_PATH', dirname(__DIR__) . '/');
 }
 
+/**
+ * Class OSProjectsGit
+ * 
+ * This class is used to interact with a Git repository using the git-php library.
+ * 
+ * Public methods:
+ * - last_commit(): Get the last commit hash and date.
+ * - last_commit_date(): Get the last commit date.
+ * - last_commit_hash(): Get the last commit hash.
+ * - last_commit_hash_long(): Get the last commit long hash.
+ * - last_commit_url(): Get the last commit URL.
+ * - last_commit_html(): Get the last commit HTML link.
+ * - last_tag(): Get the last tag.
+ * - version(): Get the version.
+ * - release_date(): Get the release date.
+ * - download_url(): Get the download URL.
+ * - last_release_html(): Get the last release HTML link.
+ * - license(): Get the license.
+ * - cleanup(): Remove the temporary directory.
+ * 
+ * @package osprojects
+ * @since 0.1.0
+ */
 class OSProjectsGit
 {
     private $git;
@@ -18,6 +41,7 @@ class OSProjectsGit
     private $version = null;
     private $release_date = null;
     private $download_url = null;
+    private $license = null;
     
     public function __construct($repo_url)
     {
@@ -44,7 +68,7 @@ class OSProjectsGit
                 // '--single-branch' => null, // Removed to fetch all branches and tags
             ]);
         } catch (CzProject\GitPhp\GitException $e) {
-            error_log ( __METHOD__ . ' Git clone failed: ' . $e->getMessage() );
+            error_log ( 'Git clone failed: ' . $e->getMessage() );
             $this->repository = null;
             return;
         }
@@ -61,31 +85,62 @@ class OSProjectsGit
             return false;
         }
         if (!empty($this->last_commit)) return $this->last_commit;
-
+        
         // Use execute() and handle the array output
-        $logArray = $this->repository->execute('log', '-1', '--format=%cd');
-        $logString = isset($logArray[0]) ? $logArray[0] : '';
-        $this->last_commit = trim($logString);
+        $logArray = $this->repository->execute('log', '-1', '--format=%H %cd');
+        if ( ! empty( $logArray ) ) {
+            $commit = [];
+            $logArray = explode(' ', $logArray[0]);
+            
+            // Format the date
+            $date = new DateTime($logArray[1]);
+            $commit['date'] = $date->format('Y-m-d H:i:s');
+            
+            // Format the commit hash
+            $commit['hash_long'] = $logArray[0];
+            $commit['hash'] = substr($logArray[0], 0, 7);
+            $this->last_commit = $commit;
+        } else {
+            $this->last_commit = false;
+        }
         return $this->last_commit;
     }
 
-    /**
-     * Get the last commit hash.
-     *
-     * @return string|false The last commit hash or false if unavailable.
-     */
-    public function last_commit_hash()
-    {
-        if ($this->repository === null) {
-            return false;
-        }
-        // Use execute() and handle the array output
-        $hashArray = $this->repository->execute('log', '-1', '--format=%H');
-        $hash = isset($hashArray[0]) ? $hashArray[0] : '';
-        return trim($hash);
+    public function last_commit_date() {
+        if( empty( $this->last_commit() ) ) return false;
+        return $this->last_commit['date'];
     }
 
-    public function get_last_tag()
+    public function last_commit_hash() {
+        if( empty( $this->last_commit() ) ) return false;
+        return $this->last_commit['hash'];
+    }
+
+    public function last_commit_hash_long() {
+        if( empty( $this->last_commit() ) ) return false;
+        return $this->last_commit['hash_long'];
+    }
+
+    public function last_commit_url() {
+        if( empty( $this->last_commit() ) ) return false;
+        return $this->repo_url . '/commit/' . $this->last_commit['hash_long'];
+    }
+
+    public function last_commit_html() {
+        if( empty( $this->last_commit() ) ) {
+            return false;
+        }
+        $html = sprintf(
+            '<a href="%s/commit/%s">%s</a> (%s)', 
+            $this->repo_url,
+            $this->last_commit_hash_long(),
+            $this->last_commit_hash(),
+            $this->last_commit_date(),
+        );
+        return $html;
+    }
+
+    public function last_tag()
     {
         if ( ! empty( $this->last_tag ) ) return $this->last_tag;
         if ( $this->last_tag === false ) return false;
@@ -108,7 +163,7 @@ class OSProjectsGit
 
     public function version() {
         if( ! empty( $this->version ) ) return $this->version;
-        if( empty( $this->get_last_tag() ) ) return false;
+        if( empty( $this->last_tag() ) ) return false;
 
         $this->version = $this->last_tag;
         return $this->version;
@@ -116,7 +171,7 @@ class OSProjectsGit
 
     public function release_date() {
         if( ! empty( $this->release_date ) ) return $this->release_date;
-        if( empty( $this->get_last_tag() ) ) return false;
+        if( empty( $this->last_tag() ) ) return false;
 
         $dateArray = $this->repository->execute('log', '-1', '--format=%cd', $this->last_tag);
         $dateString = isset($dateArray[0]) ? $dateArray[0] : '';
@@ -131,7 +186,7 @@ class OSProjectsGit
      */
     public function download_url() {
         if( ! empty( $this->download_url ) ) return $this->download_url;
-        if( empty( $this->get_last_tag() ) ) return false;
+        if( empty( $this->last_tag() ) ) return false;
 
         // Use $this->repo_url to construct the download link
         $parsed = parse_url($this->repo_url);
@@ -157,6 +212,16 @@ class OSProjectsGit
         }
 
         return $this->download_url;
+    }
+
+    function last_release_html() {
+        if( empty( $this->last_tag() ) ) return false;
+        return sprintf(
+            '<a href="%s">%s</a> (%s)',
+            $this->download_url(),
+            $this->version(),
+            $this->release_date(),
+        );
     }
 
     public function license()
@@ -198,17 +263,15 @@ class OSProjectsGit
     }
 }
 
-// Test code, don't enable unless needed for debug
+// // Test code, don't enable unless needed for debug
 // $repo_url = 'https://github.com/GuduleLapointe/w4os';
 // $git = new OSProjectsGit($repo_url);
 
 // error_log( "\n" .
-//     "Last commit: " . $git->last_commit_hash() . " on " . $git->last_commit() . "\n" .
-//     "Last release: " . $git->version() . " on " . $git->release_date() . "\n" .
-//     "Last release download link: " . $git->download_url() . "\n" .
-//     "License: " . $git->license() . "\n"
+//     "Last commit html: " . $git->last_commit_html() . "\n" .
+//     " Last commit date: " . $git->last_commit_date() . "\n" .
+//     " Last commit hash: " . $git->last_commit_hash() . "\n" .
+//     " Last commit hash long: " . $git->last_commit_hash_long() . "\n" .
+//     " Last release: " . $git->last_release_html() . "\n" .
+//     " License: " . $git->license() . "\n"
 // );
-// // echo "Last commit: " . $git->last_commit_hash() . " on " . $git->last_commit() . "\n";
-// // echo "Last release: " . $git->version() . " on " . $git->release_date() . "\n";
-// // echo "Last release download link: " . $git->download_url() . "\n";
-// // echo "License: " . $git->license() . "\n";
