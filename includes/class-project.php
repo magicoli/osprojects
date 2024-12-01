@@ -66,7 +66,8 @@ class OSProjectsProject {
             'hierarchical'       => false,
             'menu_position'      => null,
             'supports'           => array( 'title', 'editor', 'thumbnail', 'excerpt', 'comments', 'revisions' ),
-            'show_in_rest'       => OSProjects::get_option('enable_gutenberg') // Use the OSProjectsSettings method for show_in_rest
+            'show_in_rest'       => OSProjects::get_option('enable_gutenberg'), // Use the OSProjectsSettings method for show_in_rest
+            'show_in_admin_bar'  => true // Ensure it shows in the admin bar
         );
 
         register_post_type( 'project', $args );
