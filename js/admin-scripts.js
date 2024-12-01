@@ -62,7 +62,7 @@ jQuery(document).ready(function($) {
                         // Check if last_commit_html exists to validate the repository
                         if (response.data.last_commit_html) {
                             // Update the UI with the new data
-                            $('#osp_project_license').text(response.data.license || ''); // Allow empty license
+                            $('#osp_project_license').text(response.data.license || ''); // Ensure license is updated
                             $('#osp_project_release').html(response.data.last_release_html || ''); // Allow empty release
                             $('#osp_project_last_commit').html(response.data.last_commit_html);
                             
@@ -147,7 +147,7 @@ jQuery(document).ready(function($) {
                         // Check if last_commit_html exists to validate the repository
                         if (response.data.last_commit_html) {
                             // Update the UI with the new data
-                            $('#osp_project_license').text(response.data.license || ''); // Allow empty license
+                            $('#osp_project_license').text(response.data.license || ''); // Ensure license is updated
                             $('#osp_project_release').html(response.data.last_release_html || ''); // Allow empty release
                             $('#osp_project_last_commit').html(response.data.last_commit_html);
                             
