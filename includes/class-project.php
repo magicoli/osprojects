@@ -129,14 +129,14 @@ class OSProjectsProject {
             return;
         }
 
-        add_meta_box(
-            'general_meta_box',
-            __( 'General', 'osprojects' ),
-            array( $this, 'render_general_meta_box' ),
-            'project',
-            'normal',
-            'high'
-        );
+        // add_meta_box(
+        //     'general_meta_box',
+        //     __( 'General', 'osprojects' ),
+        //     array( $this, 'render_general_meta_box' ),
+        //     'project',
+        //     'normal',
+        //     'high'
+        // );
 
         add_meta_box(
             'repository_meta_box',
@@ -148,13 +148,13 @@ class OSProjectsProject {
         );
     }
 
-    /**
-     * Render the general meta box
-     */
-    public function render_general_meta_box( $post ) {
-        wp_nonce_field( 'save_general', 'general_nonce' );
-        require OSPROJECTS_PLUGIN_PATH . 'templates/project-fields-general.php';
-    }
+    // /**
+    //  * Render the general meta box
+    //  */
+    // public function render_general_meta_box( $post ) {
+    //     wp_nonce_field( 'save_general', 'general_nonce' );
+    //     require OSPROJECTS_PLUGIN_PATH . 'templates/project-fields-general.php';
+    // }
 
     /**
      * Render the repository meta box
@@ -218,9 +218,9 @@ class OSProjectsProject {
      */
     public function save_project_meta_boxes( $post_id ) {
         // Check if our nonce is set.
-        if ( ! isset( $_POST['general_nonce'] ) || ! wp_verify_nonce( $_POST['general_nonce'], 'save_general' ) ) {
-            return;
-        }
+        // if ( ! isset( $_POST['general_nonce'] ) || ! wp_verify_nonce( $_POST['general_nonce'], 'save_general' ) ) {
+        //     return;
+        // }
 
         if ( ! isset( $_POST['repository_nonce'] ) || ! wp_verify_nonce( $_POST['repository_nonce'], 'save_repository' ) ) {
             return;
