@@ -1,0 +1,13 @@
+
+.osprojects-field {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.osprojects-field label {
+    width: 200px;
+    margin-right: 10px;
+}
+.osprojects-field input {
+    flex: 1;
+}

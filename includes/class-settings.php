@@ -104,7 +104,7 @@ class OSProjectsSettings {
      */
     public function settings_page() {
         // Load the settings page template
-        require_once OSPROJECTS_PATH . 'templates/settings.php';
+        require_once OSPROJECTS_PLUGIN_PATH . 'templates/settings.php';
     }
 }
 

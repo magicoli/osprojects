@@ -58,7 +58,7 @@ class OSProjects {
      */
     public function dashboard() {
         // Load the dashboard template
-        require_once OSPROJECTS_PATH . 'templates/dashboard.php';
+        require_once OSPROJECTS_PLUGIN_PATH . 'templates/dashboard.php';
     }
 
     /**

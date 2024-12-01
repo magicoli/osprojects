@@ -18,14 +18,17 @@ if ( ! defined( 'WPINC' ) ) {
 }
 
 // Define the plugin path
-define( 'OSPROJECTS_PATH', plugin_dir_path( __FILE__ ) );
+define( 'OSPROJECTS_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
+
+// Define the plugin URL
+define( 'OSPROJECTS_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 // Include the main plugin class
-require_once OSPROJECTS_PATH . 'includes/init-class.php';
+require_once OSPROJECTS_PLUGIN_PATH . 'includes/init-class.php';
 
 // Include classes
-require_once OSPROJECTS_PATH . 'includes/class-settings.php';
-require_once OSPROJECTS_PATH . 'includes/class-project.php';
+require_once OSPROJECTS_PLUGIN_PATH . 'includes/class-settings.php';
+require_once OSPROJECTS_PLUGIN_PATH . 'includes/class-project.php';
 
 // Initialize the main plugin class
 $OSprojects = new OSProjects();
