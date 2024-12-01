@@ -129,39 +129,23 @@ class OSProjectsProject {
             return;
         }
 
-        // Remove existing "General" and "Repository" meta boxes
-        // add_meta_box(
-        //     'general_meta_box',
-        //     __( 'General', 'osprojects' ),
-        //     array( $this, 'render_general_meta_box' ),
-        //     'project',
-        //     'normal',
-        //     'high'
-        // );
-
-        // add_meta_box(
-        //     'repository_meta_box',
-        //     __( 'Repository', 'osprojects' ),
-        //     array( $this, 'render_repository_meta_box' ),
-        //     'project',
-        //     'normal',
-        //     'high'
-        // );
-
-        // Add new "Project Details" meta box
         add_meta_box(
-            'project_details_meta_box',
-            __( 'Project Details', 'osprojects' ),
-            array( $this, 'render_project_details_meta_box' ),
+            'general_meta_box',
+            __( 'General', 'osprojects' ),
+            array( $this, 'render_general_meta_box' ),
             'project',
             'normal',
             'high'
         );
-    }
 
-    public function render_project_details_meta_box( $post ) {
-        wp_nonce_field( 'save_project_details', 'project_details_nonce' );
-        require OSPROJECTS_PLUGIN_PATH . 'templates/project-fields-details.php';
+        add_meta_box(
+            'repository_meta_box',
+            __( 'Repository', 'osprojects' ),
+            array( $this, 'render_repository_meta_box' ),
+            'project',
+            'normal',
+            'high'
+        );
     }
 
     /**
@@ -353,6 +337,7 @@ class OSProjectsProject {
      * AJAX handler to fetch Git data
      */
     public function ajax_fetch_git_data() {
+        error_log( __FUNCTION__ . ' called' );
         
         // Verify nonce with updated action name
         if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'osprojects_fetch_git_data' ) ) { // Updated nonce action
@@ -383,11 +368,11 @@ class OSProjectsProject {
 
         // Prepare the response data
         $data = array(
-            'license'           => $license,
-            'version'           => $version,
-            'release_date'      => $release_date,
-            'last_release_html' => $last_release_html,
-            'last_commit_html'  => $last_commit_html,
+            'license'                  => $license,
+            'version'                  => $version,
+            'release_date'             => $release_date,
+            'last_release_html'        => $last_release_html,
+            'last_commit_html'         => $last_commit_html,
         );
 
         wp_send_json_success( $data );

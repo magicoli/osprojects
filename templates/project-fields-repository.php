@@ -1,25 +1,12 @@
-
 <?php
 $short_description = get_post_meta( $post->ID, 'osp_project_shortdesc', true );
 $project_repository = get_post_meta( $post->ID, 'osp_project_repository', true );
 $project_license = get_post_meta( $post->ID, 'osp_project_license', true );
 $project_release = get_post_meta( $post->ID, 'osp_project_last_release_html', true ); 
 $last_commit_html = get_post_meta( $post->ID, 'osp_project_last_commit_html', true );
-$project_website = get_post_meta( $post->ID, 'osp_project_website', true );
 ?>
 
 <table class="form-table">
-    <!-- General Fields -->
-    <tr>
-        <th scope="row">
-            <label for="osprojects_project_website"><?php _e( 'Project Website', 'osprojects' ); ?></label>
-        </th>
-        <td>
-            <input type="url" name="osprojects_project_website" id="osprojects_project_website" value="<?php echo esc_attr( $project_website ); ?>" class="regular-text" />
-        </td>
-    </tr>
-    
-    <!-- Repository Fields -->
     <tr>
         <th scope="row">
             <label for="osp_project_repository"><?php _e( 'Git Repository', 'osprojects' ); ?></label>
