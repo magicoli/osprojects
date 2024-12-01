@@ -184,11 +184,6 @@ class OSProjectsProject {
             $release_date = $git->release_date();
             $last_release_html = $git->last_release_html();
             $last_commit_html = $git->last_commit_html();
-            error_log( '
-            License: ' . $license . '
-            Release HTML: ' . $last_release_html . '
-            Last Commit HTML: ' . $last_commit_html
-            );
 
             // Save fetched data as post meta
             update_post_meta( $post_id, 'osp_project_license', sanitize_text_field( $license ) );
