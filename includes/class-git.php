@@ -4,9 +4,8 @@
 **/
 
 if(!defined('OSPROJECTS_PLUGIN_PATH')){
-    define('OSPROJECTS_PLUGIN_PATH', __DIR__ . '/');
+    define('OSPROJECTS_PLUGIN_PATH', dirname(__DIR__) . '/');
 }
-require_once OSPROJECTS_PLUGIN_PATH . 'lib/autoload.php';
 
 class OSProjectsGit
 {
@@ -19,9 +18,11 @@ class OSProjectsGit
     private $version = null;
     private $release_date = null;
     private $download_url = null;
-
+    
     public function __construct($repo_url)
     {
+        require_once OSPROJECTS_PLUGIN_PATH . 'lib/autoload.php';
+
         // Set environment variable to ensure Git outputs messages in English
         putenv('LANG=C');
 
@@ -43,10 +44,13 @@ class OSProjectsGit
                 // '--single-branch' => null, // Removed to fetch all branches and tags
             ]);
         } catch (CzProject\GitPhp\GitException $e) {
-            error_log ( 'Git clone failed: ' . $e->getMessage() );
+            error_log ( __METHOD__ . ' Git clone failed: ' . $e->getMessage() );
             $this->repository = null;
             return;
         }
+
+        // Hook the cleanup method to WordPress shutdown within the class
+        add_action('shutdown', array($this, 'cleanup'));
 
         $this->repo_url = $repo_url;
     }
@@ -194,19 +198,17 @@ class OSProjectsGit
     }
 }
 
-$repo_url = 'https://github.com/GuduleLapointe/w4os';
+// Test code, don't enable unless needed for debug
+// $repo_url = 'https://github.com/GuduleLapointe/w4os';
+// $git = new OSProjectsGit($repo_url);
 
-$git = new OSProjectsGit($repo_url);
-
-error_log( "\n" .
-    "Last commit: " . $git->last_commit_hash() . " on " . $git->last_commit() . "\n" .
-    "Last release: " . $git->version() . " on " . $git->release_date() . "\n" .
-    "Last release download link: " . $git->download_url() . "\n" .
-    "License: " . $git->license() . "\n"
-);
-// echo "Last commit: " . $git->last_commit_hash() . " on " . $git->last_commit() . "\n";
-// echo "Last release: " . $git->version() . " on " . $git->release_date() . "\n";
-// echo "Last release download link: " . $git->download_url() . "\n";
-// echo "License: " . $git->license() . "\n";
-
-$git->cleanup();
+// error_log( "\n" .
+//     "Last commit: " . $git->last_commit_hash() . " on " . $git->last_commit() . "\n" .
+//     "Last release: " . $git->version() . " on " . $git->release_date() . "\n" .
+//     "Last release download link: " . $git->download_url() . "\n" .
+//     "License: " . $git->license() . "\n"
+// );
+// // echo "Last commit: " . $git->last_commit_hash() . " on " . $git->last_commit() . "\n";
+// // echo "Last release: " . $git->version() . " on " . $git->release_date() . "\n";
+// // echo "Last release download link: " . $git->download_url() . "\n";
+// // echo "License: " . $git->license() . "\n";
