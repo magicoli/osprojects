@@ -28,11 +28,15 @@ require_once OSPROJECTS_PLUGIN_PATH . 'includes/init-class.php';
 // Include classes
 require_once OSPROJECTS_PLUGIN_PATH . 'includes/class-settings.php';
 require_once OSPROJECTS_PLUGIN_PATH . 'includes/class-project.php';
-require_once OSPROJECTS_PLUGIN_PATH . 'includes/class-git.php';
+
+// Include helpers
+require_once OSPROJECTS_PLUGIN_PATH . 'includes/helpers/class-git.php';
+
 // Initialize the main plugin class
 $OSprojects = new OSProjects();
+
+// No need to initialize OSProjectsGit here, it is initialized only on demand
 
 // Initialize classes
 $OSProjectsSettings = new OSProjectsSettings();
 $OSProjectsProject = new OSProjectsProject();
-// No need to initialize OSProjectsGit here, it is initialized only on demand

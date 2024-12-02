@@ -3,10 +3,6 @@
  * Test file to check git-php implementation
 **/
 
-if(!defined('OSPROJECTS_PLUGIN_PATH')){
-    define('OSPROJECTS_PLUGIN_PATH', dirname(__DIR__) . '/');
-}
-
 /**
  * Class OSProjectsGit
  * 
