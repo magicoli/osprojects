@@ -92,4 +92,42 @@ class OSProjects {
         $options[$option_name] = $value;
         return update_option('osprojects-settings', $options);
     }
+
+    /**
+     * Replicate enqueue_styles to share the same default args
+     */
+    public static function enqueue_styles($handle, $src = '', $deps = array(), $ver = OSPROJECTS_PLUGIN_VERSION, $media = 'all') {
+        if( defined( 'OSP_DEBUG' ) && OSP_DEBUG ) {
+            $ver = filemtime( OSPROJECTS_PLUGIN_PATH . $src );
+        }
+        $src = OSPROJECTS_PLUGIN_URL . $src;
+        if( is_admin() ) {
+            add_action( 'admin_enqueue_scripts', function() use ( $handle, $src, $deps, $ver, $media ) {
+                wp_enqueue_style($handle, $src, $deps, $ver, $media);
+            });
+        } else {
+            add_action( 'wp_enqueue_scripts', function() use ( $handle, $src, $deps, $ver, $media ) {
+                wp_enqueue_style($handle, $src, $deps, $ver, $media);
+            });
+        }
+    }
+
+    /**
+     * Replicate enqueue_scripts to share the same default args
+     */
+    public static function enqueue_scripts($handle, $src = '', $deps = array(), $ver = OSPROJECTS_PLUGIN_VERSION, $in_footer = false) {
+        if( defined( 'OSP_DEBUG' ) && OSP_DEBUG ) {
+            $ver = filemtime( OSPROJECTS_PLUGIN_PATH . $src );
+        }
+        $src = OSPROJECTS_PLUGIN_URL . $src;
+        if( is_admin() ) {
+            add_action( 'admin_enqueue_scripts', function() use ( $handle, $src, $deps, $ver, $in_footer ) {
+                wp_enqueue_script($handle, $src, $deps, $ver, $in_footer);
+            });
+        } else {
+            add_action( 'wp_enqueue_scripts', function() use ( $handle, $src, $deps, $ver, $in_footer ) {
+                wp_enqueue_script($handle, $src, $deps, $ver, $in_footer);
+            });
+        }
+    }
 }

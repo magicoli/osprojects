@@ -70,7 +70,7 @@ jQuery(document).ready(function($) {
                             $('#osp_project_repository_notification').text('');
                         } else {
                             // Display error message in notification
-                            $('#osp_project_repository_notification').text('Invalid Git repository: Last commit not found.');
+                            $('#osp_project_repository_notification').text('Invalid Git repository.');
                             
                             // Clear the fields since the repository is invalid
                             $('#osp_project_license').text('');

@@ -46,6 +46,13 @@ class OSProjectsGit
     
     public function __construct($repo_url)
     {
+        if( empty( $repo_url ) ) return;
+        
+        // Make sure $repo_url is a valid URL
+        if (!filter_var($repo_url, FILTER_VALIDATE_URL)) {
+            return;
+        }
+        
         require_once OSPROJECTS_PLUGIN_PATH . 'lib/autoload.php';
 
         // Set environment variable to ensure Git outputs messages in English
@@ -53,18 +60,16 @@ class OSProjectsGit
 
         $this->git = new CzProject\GitPhp\Git();
 
-        // Use a subfolder of the current path instead of sys_get_temp_dir()
-        $tmp_dir = __DIR__ . '/tmp/osprojects_git_' . uniqid();
-        $this->repoPath = $tmp_dir;
+        $this->repoPath = get_temp_dir() . 'osprojects_git_' . uniqid();
 
         // Create the directory if it doesn't exist
-        if (!file_exists(dirname($tmp_dir))) {
-            mkdir(dirname($tmp_dir), 0755, true);
+        if (!file_exists(dirname($this->repoPath))) {
+            mkdir(dirname($this->repoPath), 0755, true);
         }
 
         try {
             // Clone the repository without depth and single-branch options to include all tags
-            $this->repository = $this->git->cloneRepository($repo_url, $tmp_dir, [
+            $this->repository = $this->git->cloneRepository($repo_url, $this->repoPath, [
                 // '--depth' => '1', // Removed to allow full clone with complete history
                 // '--single-branch' => null, // Removed to fetch all branches and tags
             ]);
@@ -83,6 +88,8 @@ class OSProjectsGit
 
     private function loadRepositoryFiles()
     {
+        if( empty( $this->repository ) ) return;
+
         $files = ['composer.json', 'package.json', 'readme.txt', 'README.md'];
         foreach ($files as $file) {
             $filePath = $this->repoPath . '/' . $file;
@@ -243,6 +250,7 @@ class OSProjectsGit
     {
         $standard_files = ['composer.json', 'package.json', 'readme.txt'];
         foreach ($standard_files as $file) {
+            if( ! isset( $this->fileContents[$file] ) ) continue;
             $content = $this->fileContents[$file];
             if ($content) {
                 if ($file === 'composer.json' || $file === 'package.json') {

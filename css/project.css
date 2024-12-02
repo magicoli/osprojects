@@ -1,0 +1,14 @@
+
+.wp-list-table {
+    font-size: 0.9em;
+}
+
+.wp-list-table th {
+    white-space: nowrap;
+    text-align: left;
+    padding-right: 10px;
+}
+
+.wp-list-table td {
+    padding-left: 10px;
+}

@@ -10,7 +10,7 @@ $osp_project_website = get_post_meta( $post->ID, 'osp_project_website', true );
 <table class="form-table">
     <tr>
         <th scope="row">
-            <label for="osp_project_website"><?php _e( 'Project Website', 'osprojects' ); ?></label>
+            <label for="osp_project_website"><?php _e( 'Official Website', 'osprojects' ); ?></label>
         </th>
         <td>
             <input type="url" name="osp_project_website" id="osp_project_website" value="<?php echo esc_attr( $osp_project_website ); ?>" class="regular-text" />

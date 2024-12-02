@@ -139,29 +139,21 @@ class OSProjectsProject {
         // );
 
         add_meta_box(
-            'repository_meta_box',
-            __( 'Repository', 'osprojects' ),
-            array( $this, 'render_repository_meta_box' ),
+            'project_details_metabox',
+            __( 'Project Details', 'osprojects' ),
+            array( $this, 'render_project_details_metabox' ),
             'project',
             'normal',
             'high'
         );
     }
 
-    // /**
-    //  * Render the general meta box
-    //  */
-    // public function render_general_meta_box( $post ) {
-    //     wp_nonce_field( 'save_general', 'general_nonce' );
-    //     require OSPROJECTS_PLUGIN_PATH . 'templates/project-fields-general.php';
-    // }
-
     /**
      * Render the repository meta box
      */
-    public function render_repository_meta_box( $post ) {
+    public function render_project_details_metabox( $post ) {
         wp_nonce_field( 'save_repository', 'repository_nonce' );
-        require OSPROJECTS_PLUGIN_PATH . 'templates/project-fields-repository.php';
+        require OSPROJECTS_PLUGIN_PATH . 'templates/project-edit-metabox-details.php';
     }
 
     /**
@@ -170,7 +162,7 @@ class OSProjectsProject {
     public function enqueue_admin_styles( $hook_suffix ) {
         global $post_type;
         if ( 'project' === $post_type && ( 'post.php' === $hook_suffix || 'post-new.php' === $hook_suffix ) ) {
-            wp_enqueue_style( 'osprojects-admin-styles', OSPROJECTS_PLUGIN_URL . 'css/admin-styles.css', array(), '1.0'.time() );
+            OSProjects::enqueue_styles( 'osprojects-admin', 'css/admin.css' );
         }
     }
 
@@ -181,8 +173,8 @@ class OSProjectsProject {
         global $post_type;
         if ( 'project' === $post_type && in_array( $hook_suffix, array( 'post.php', 'post-new.php' ) ) ) {
             wp_enqueue_script(
-                'osprojects-admin-scripts',
-                OSPROJECTS_PLUGIN_URL . 'js/admin-scripts.js',
+                'osprojects-admin-project-ajax',
+                OSPROJECTS_PLUGIN_URL . 'js/admin-project-ajax.js',
                 array(), // No dependencies
                 '1.0' . time(), // Version
                 true
@@ -195,7 +187,7 @@ class OSProjectsProject {
             }
 
             // Localize script with AJAX URL, repository URL, and updated nonce
-            wp_localize_script( 'osprojects-admin-scripts', 'OSProjectsAjax', array(
+            wp_localize_script( 'osprojects-admin-project-ajax', 'OSProjectsAjax', array(
                 'ajax_url'       => admin_url( 'admin-ajax.php' ),
                 'repository_url' => $repository_url,
                 'nonce'          => wp_create_nonce( 'osprojects_fetch_git_data' ), // Updated nonce action
@@ -337,8 +329,6 @@ class OSProjectsProject {
      * AJAX handler to fetch Git data
      */
     public function ajax_fetch_git_data() {
-        error_log( __FUNCTION__ . ' called' );
-        
         // Verify nonce with updated action name
         if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'osprojects_fetch_git_data' ) ) { // Updated nonce action
             wp_send_json_error( 'Invalid nonce.' );
