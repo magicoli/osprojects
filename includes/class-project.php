@@ -284,6 +284,12 @@ class OSProjectsProject {
         if ( is_singular( 'project' ) && in_the_loop() && is_main_query() ) {
             ob_start();
             require OSPROJECTS_PLUGIN_PATH . 'templates/project-content.php';
+            // Modify the project content template to use OSProjects::date_time()
+            $release_date = get_post_meta( get_the_ID(), 'osp_project_release_date', true );
+            if ( $release_date ) {
+                $formatted_date = OSProjects::date_time( $release_date );
+                // Use $formatted_date in the template
+            }
             $template_content = ob_get_clean();
             return $template_content;
         }

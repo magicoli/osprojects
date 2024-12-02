@@ -116,7 +116,7 @@ class OSProjectsGit
             
             // Format the date
             $date = new DateTime($logArray[1]);
-            $commit['date'] = wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $date->getTimestamp() );
+            $commit['date'] = OSProjects::date_time($date);
             
             // Format the commit hash
             $commit['hash_long'] = $logArray[0];
@@ -199,7 +199,7 @@ class OSProjectsGit
         $dateString = isset($dateArray[0]) ? $dateArray[0] : '';
         $date = new DateTime($dateString);
         
-        return wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $date->getTimestamp() );
+        return OSProjects::date($date);
     }
 
     /**

@@ -130,4 +130,43 @@ class OSProjects {
             });
         }
     }
+
+    /**
+     * Format date based on site preferences.
+     *
+     * @param DateTime|string $date Date object or date string.
+     * @return string Formatted date.
+     */
+    public static function date( $date ) {
+        if ( ! $date instanceof DateTime ) {
+            $date = new DateTime( $date );
+        }
+        return wp_date( get_option( 'date_format' ), $date->getTimestamp() );
+    }
+
+    /**
+     * Format date and time based on site preferences.
+     *
+     * @param DateTime|string $date Date object or date string.
+     * @return string Formatted date and time.
+     */
+    public static function date_time( $date ) {
+        if ( ! $date instanceof DateTime ) {
+            $date = new DateTime( $date );
+        }
+        return wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $date->getTimestamp() );
+    }
+
+    /**
+     * Format time based on site preferences.
+     *
+     * @param DateTime|string $time Date object or date string.
+     * @return string Formatted time.
+     */
+    public static function time( $time ) {
+        if ( ! $time instanceof DateTime ) {
+            $time = new DateTime( $time );
+        }
+        return wp_date( get_option( 'time_format' ), $time->getTimestamp() );
+    }
 }
