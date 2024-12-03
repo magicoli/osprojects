@@ -10,7 +10,8 @@
         }
     ],
     "require": {
-        "czproject/git-php": "^4.3"
+        "czproject/git-php": "^4.3",
+        "erusev/parsedown": "^1.7"
     },
     "require-dev": {
         "wp-coding-standards/wpcs": "^3.1",

@@ -6,6 +6,16 @@ namespace Composer\Autoload;
 
 class ComposerStaticInit90248516a6419571e6a0281cf395ddb2
 {
+    public static $prefixesPsr0 = array (
+        'P' => 
+        array (
+            'Parsedown' => 
+            array (
+                0 => __DIR__ . '/..' . '/erusev/parsedown',
+            ),
+        ),
+    );
+
     public static $classMap = array (
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
         'CzProject\\GitPhp\\CommandProcessor' => __DIR__ . '/..' . '/czproject/git-php/src/CommandProcessor.php',
@@ -29,6 +39,7 @@ class ComposerStaticInit90248516a6419571e6a0281cf395ddb2
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
+            $loader->prefixesPsr0 = ComposerStaticInit90248516a6419571e6a0281cf395ddb2::$prefixesPsr0;
             $loader->classMap = ComposerStaticInit90248516a6419571e6a0281cf395ddb2::$classMap;
 
         }, null, ClassLoader::class);
