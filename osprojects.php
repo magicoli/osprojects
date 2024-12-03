@@ -31,6 +31,7 @@ require_once OSPROJECTS_PLUGIN_PATH . 'includes/class-project.php';
 
 // Include helpers
 require_once OSPROJECTS_PLUGIN_PATH . 'includes/helpers/class-git.php';
+require_once OSPROJECTS_PLUGIN_PATH . 'includes/helpers/class-admin-import.php'; // Added line
 
 // Initialize the main plugin class
 $OSprojects = new OSProjects();
@@ -40,3 +41,5 @@ $OSprojects = new OSProjects();
 // Initialize classes
 $OSProjectsSettings = new OSProjectsSettings();
 $OSProjectsProject = new OSProjectsProject();
+
+$OSProjectsAdminImport = new OSProjectsAdminImport();

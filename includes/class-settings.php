@@ -27,7 +27,7 @@ class OSProjectsSettings {
      */
     public function init() {
         // Add settings page
-        add_action( 'admin_menu', array( $this, 'add_settings_page' ) );
+        add_action( 'admin_menu', array( $this, 'register_admin_submenus' ) );
         add_action( 'admin_init', array( $this, 'register_settings' ) );
 
         // Set default project URL prefix if not set
@@ -87,7 +87,7 @@ class OSProjectsSettings {
     /**
      * Add settings page to OSProjects menu
      */
-    public function add_settings_page() {
+    public function register_admin_submenus() {
         // Add settings page
         add_submenu_page(
             'osprojects',

@@ -16,7 +16,7 @@ class OSProjectsProject {
         add_action( 'init', array( $this, 'register_post_type' ) );
 
         // Add projects submenu
-        add_action( 'admin_menu', array( $this, 'add_projects_submenu' ) );
+        add_action( 'admin_menu', array( $this, 'register_admin_submenus' ), 5 ); // Priority 5 to match the main menu
 
         // Add meta boxes for project post type
         add_action( 'add_meta_boxes', array( $this, 'add_project_meta_boxes' ) );
@@ -381,7 +381,7 @@ class OSProjectsProject {
     /**
      * Add submenu pages for the osprojects admin menu
      */
-    public function add_projects_submenu() {
+    public function register_admin_submenus() {
         add_submenu_page(
             'osprojects',
             __( 'Projects', 'osprojects' ),

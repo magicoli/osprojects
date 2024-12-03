@@ -22,13 +22,13 @@ class OSProjects {
         add_action( 'init', array( $this, 'load_plugin_textdomain' ) );
 
         // Add main menu and dashboard
-        add_action( 'admin_menu', array( $this, 'add_menu' ) );
+        add_action( 'admin_menu', array( $this, 'register_admin_menu' ), 5 );
     }
 
     /**
      * Add main menu and dashboard
      */
-    public function add_menu() {
+    public function register_admin_menu() {
         // Add main menu
         add_menu_page(
             __( 'Open Source Projects', 'osprojects' ),
