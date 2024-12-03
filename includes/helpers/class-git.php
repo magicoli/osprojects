@@ -64,10 +64,10 @@ class OSProjectsGit
         }
 
         try {
-            // Clone the repository without depth and single-branch options to include all tags
+            // Limit clone depth to speed up cloning and prevent timeouts
             $this->repository = $this->git->cloneRepository($repo_url, $this->repoPath, [
-                // '--depth' => '1', // Removed to allow full clone with complete history
-                // '--single-branch' => null, // Removed to fetch all branches and tags
+                '--depth' => '1',
+                '--single-branch' => null,
             ]);
         } catch (CzProject\GitPhp\GitException $e) {
             // error_log ( 'Git clone failed: ' . $e->getMessage() );
@@ -167,7 +167,7 @@ class OSProjectsGit
             return false;
         }
 
-        // Use execute() and handle the array output
+        // Adjusted to handle shallow clones
         $tagsArray = $this->repository->execute('tag', '-l', '--sort=-creatordate');
         $tags = array_filter($tagsArray);
 
@@ -301,7 +301,57 @@ class OSProjectsGit
             }
         }
         // ...additional logic based on readme files...
-        return 'unknown';
+        // Return null if type is not found
+        return null;
+    }
+
+    public function get_project_title()
+    {
+        if (!empty($this->fileContents['README.md'])) {
+            $content = $this->fileContents['README.md'];
+            $lines = preg_split('/\r\n|\r|\n/', $content);
+            foreach ($lines as $line) {
+                if (preg_match('/^#\s*(.+)$/', $line, $matches)) {
+                    return trim($matches[1]);
+                }
+            }
+        } elseif (!empty($this->fileContents['readme.txt'])) {
+            $content = $this->fileContents['readme.txt'];
+            if (preg_match('/^Plugin Name:\s*(.+)$/mi', $content, $matches)) {
+                return trim($matches[1]);
+            }
+        }
+        return null;
+    }
+
+    public function get_project_description()
+    {
+        if (!empty($this->fileContents['README.md'])) {
+            $content = $this->fileContents['README.md'];
+            // Extract content under ## Description until the next heading
+            if (preg_match('/##\s*Description\s*(.*?)\n##/s', $content, $matches)) {
+                $description = trim($matches[1]);
+            } elseif (preg_match('/##\s*Description\s*(.*)/s', $content, $matches)) {
+                // Fallback if there's no subsequent heading
+                $description = trim($matches[1]);
+            } else {
+                $description = ''; // No Description section found
+            }
+            return $description;
+        } elseif (!empty($this->fileContents['readme.txt'])) {
+            $content = $this->fileContents['readme.txt'];
+            // Extract content under == Description == until the next section
+            if (preg_match('/==\s*Description\s*==\s*(.*?)\s*==/s', $content, $matches)) {
+                $description = trim($matches[1]);
+            } elseif (preg_match('/==\s*Description\s*==\s*(.*)/s', $content, $matches)) {
+                // Fallback if there's no subsequent section
+                $description = trim($matches[1]);
+            } else {
+                $description = ''; // No Description section found
+            }
+            return $description;
+        }
+        return null;
     }
 
     public function license()
@@ -334,6 +384,11 @@ class OSProjectsGit
             }
             rmdir($dir);
         }
+    }
+
+    public function is_repository_cloned()
+    {
+        return $this->repository !== null;
     }
 }
 

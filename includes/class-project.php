@@ -85,7 +85,8 @@ class OSProjectsProject {
             'menu_position'      => null,
             'supports'           => array( 'title', 'editor', 'thumbnail', 'excerpt', 'comments', 'revisions' ),
             'show_in_rest'       => OSProjects::get_option('enable_gutenberg'), // Use the OSProjectsSettings method for show_in_rest
-            'show_in_admin_bar'  => true // Ensure it shows in the admin bar
+            'show_in_admin_bar'  => true, // Ensure it shows in the admin bar
+            'taxonomies'         => array( 'project_category' )
         );
 
         register_post_type( 'project', $args );
@@ -116,6 +117,7 @@ class OSProjectsProject {
             'show_admin_column' => true,
             'query_var'         => true,
             'rewrite'           => array( 'slug' => 'project-category' ),
+            'show_in_rest'      => OSProjects::get_option('enable_gutenberg'), // Use the OSProjectsSettings method for show_in_rest
         );
 
         register_taxonomy( 'project_category', 'project', $args );
@@ -242,18 +244,83 @@ class OSProjectsProject {
             // Instantiate OSProjectsGit with the repository URL
             $git = new OSProjectsGit( $repository_url );
 
-            // Fetch data using OSProjectsGit methods
-            $license = $git->license();
-            $version = $git->version();
-            $release_date = $git->release_date();
-            $last_release_html = $git->last_release_html();
-            $last_commit_html = $git->last_commit_html();
+            // Check if the repository was cloned successfully
+            if ( $git->is_repository_cloned() ) {
 
-            // Save fetched data as post meta
-            update_post_meta( $post_id, 'osp_project_license', sanitize_text_field( $license ) );
-            update_post_meta( $post_id, 'osp_project_stable_release_version', sanitize_text_field( $version ) );
-            update_post_meta( $post_id, 'osp_project_last_release_html', wp_kses_post( $last_release_html ) );
-            update_post_meta( $post_id, 'osp_project_last_commit_html', wp_kses_post( $last_commit_html ) );
+                // Fetch data using OSProjectsGit methods
+                $license = $git->license();
+                $version = $git->version();
+                $release_date = $git->release_date();
+                $last_release_html = $git->last_release_html();
+                $last_commit_html = $git->last_commit_html();
+
+                // Save fetched data as post meta
+                update_post_meta( $post_id, 'osp_project_license', sanitize_text_field( $license ) );
+                update_post_meta( $post_id, 'osp_project_stable_release_version', sanitize_text_field( $version ) );
+                update_post_meta( $post_id, 'osp_project_last_release_html', wp_kses_post( $last_release_html ) );
+                update_post_meta( $post_id, 'osp_project_last_commit_html', wp_kses_post( $last_commit_html ) );
+
+                // Set post title if available
+                $project_title = $git->get_project_title();
+                if ( $project_title ) {
+                    // Prevent infinite loop by temporarily removing the save_post action
+                    remove_action( 'save_post', array( $this, 'save_project_meta_boxes' ) );
+                    wp_update_post( array(
+                        'ID'         => $post_id,
+                        'post_title' => sanitize_text_field( $project_title ),
+                    ) );
+                    add_action( 'save_post', array( $this, 'save_project_meta_boxes' ) );
+                }
+
+                // Set post content if available
+                $project_description = $git->get_project_description();
+                if ( $project_description ) {
+                    remove_action( 'save_post', array( $this, 'save_project_meta_boxes' ) );
+
+                    // Prepare content for Gutenberg or Classic Editor
+                    $enable_gutenberg = OSProjects::get_option( 'enable_gutenberg' );
+                    if ( $enable_gutenberg ) {
+                        // Split the description by double returns to create separate blocks
+                        $segments = preg_split('/\n\s*\n/', $project_description);
+                        $blocks = array_map(function($segment) {
+                            $segment = trim($segment);
+                            // Wrap each segment in a paragraph block if not already wrapped
+                            if (strpos($segment, '<!-- wp:') !== 0) {
+                                return '<!-- wp:paragraph -->' . "\n<p>" . esc_html($segment) . "</p>\n<!-- /wp:paragraph -->";
+                            }
+                            return $segment;
+                        }, $segments);
+                        $post_content = implode("\n\n", $blocks);
+                    } else {
+                        // Use classic editor content
+                        $post_content = wp_kses_post( "No Gutenberg detected\n\n" . $project_description );
+                    }
+
+                    wp_update_post( array(
+                        'ID'           => $post_id,
+                        'post_content' => $post_content,
+                    ) );
+                    add_action( 'save_post', array( $this, 'save_project_meta_boxes' ) );
+                }
+
+                // Assign project category based on 'type'
+                $project_type = $git->get_project_type();
+                if ( $project_type ) {
+                    // Ensure term exists
+                    $term = term_exists( $project_type, 'project_category' );
+                    if ( ! $term ) {
+                        $term = wp_insert_term( $project_type, 'project_category' );
+                    }
+                    if ( ! is_wp_error( $term ) ) {
+                        // Set the term for the post using term IDs
+                        wp_set_post_terms( $post_id, array( (int) $term['term_id'] ), 'project_category', false );
+                    }
+                }
+
+            } else {
+                // Handle cloning failure
+                update_post_meta( $post_id, 'osp_project_git_error', 'Failed to clone repository.' );
+            }
         }
 
         if ( isset( $_POST['osp_project_license'] ) ) {
@@ -362,6 +429,11 @@ class OSProjectsProject {
         $last_release_html = $git->last_release_html();
         $last_commit_html = $git->last_commit_html();
 
+        // Add project title, description, and type
+        $project_title = $git->get_project_title();
+        $project_description = $git->get_project_description();
+        $project_type = $git->get_project_type();
+
         // Prepare the response data
         $data = array(
             'license'                  => $license,
@@ -369,6 +441,9 @@ class OSProjectsProject {
             'release_date'             => $release_date,
             'last_release_html'        => $last_release_html,
             'last_commit_html'         => $last_commit_html,
+            'project_title'            => $project_title,
+            'project_description'      => $project_description,
+            'project_type'             => $project_type,
         );
 
         wp_send_json_success( $data );
@@ -386,3 +461,4 @@ class OSProjectsProject {
         }
     }
 }
+

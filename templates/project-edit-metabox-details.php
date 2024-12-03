@@ -35,6 +35,16 @@ $osp_project_website = get_post_meta( $post->ID, 'osp_project_website', true );
                 <label><?php _e( 'License: ', 'osprojects' ); ?></label>
                 <span id="osp_project_license"><?php echo esc_html( $project_license ); ?></span>
             </p>
+            <p>
+                <label><?php _e( 'Project Title Updated: ', 'osprojects' ); ?></label>
+                <span id="osp_project_title_notification"></span>
+            </p>
+            <p>
+                <label><?php _e( 'Project Description Updated: ', 'osprojects' ); ?></label>
+                <span id="osp_project_description_notification"></span>
+            </p>
+            <!-- Add a hidden input to store Gutenberg detection status -->
+            <input type="hidden" id="gutenberg_enabled" value="<?php echo esc_attr( OSProjects::get_option('enable_gutenberg') ); ?>" />
         </td>
     </tr>
 </table>
