@@ -281,16 +281,7 @@ class OSProjectsProject {
                     $enable_gutenberg = OSProjects::get_option( 'enable_gutenberg' );
                     if ( $enable_gutenberg ) {
                         // Split the description by double returns to create separate blocks
-                        $segments = preg_split('/\n\s*\n/', $project_description);
-                        $blocks = array_map(function($segment) {
-                            $segment = trim($segment);
-                            // Wrap each segment in a paragraph block if not already wrapped
-                            if (strpos($segment, '<!-- wp:') !== 0) {
-                                return '<!-- wp:paragraph -->' . "\n<p>" . esc_html($segment) . "</p>\n<!-- /wp:paragraph -->";
-                            }
-                            return $segment;
-                        }, $segments);
-                        $post_content = implode("\n\n", $blocks);
+                        $post_content = self::text_to_blocks( $project_description );
                     } else {
                         // Use classic editor content
                         $post_content = wp_kses_post( "No Gutenberg detected\n\n" . $project_description );
@@ -344,6 +335,24 @@ class OSProjectsProject {
         }
     }
 
+    /**
+     * Convert text to blocks for Gutenberg
+     */
+    public function text_to_blocks( $text ) {
+        // Split the description by double returns to create separate blocks
+        $segments = preg_split('/\n\s*\n/', $text);
+        $blocks = array_map(function($segment) {
+            $segment = trim($segment);
+            // Wrap each segment in a paragraph block if not already wrapped
+            if (strpos($segment, '<!-- wp:') !== 0) {
+                return '<!-- wp:paragraph -->' . "\n<p>" . esc_html($segment) . "</p>\n<!-- /wp:paragraph -->";
+            }
+            return $segment;
+        }, $segments);
+        return implode("\n\n", $blocks);
+    }
+
+    
     /**
      * Load the project content template
      */
@@ -421,6 +430,11 @@ class OSProjectsProject {
 
         // Instantiate OSProjectsGit with the repository URL
         $git = new OSProjectsGit( $repository_url );
+
+        // Check if the repository was cloned successfully
+        if ( !$git->is_repository_cloned() ) {
+            wp_send_json_error( 'Failed to clone repository.' );
+        }
 
         // Fetch data using OSProjectsGit methods
         $license = $git->license();

@@ -68,7 +68,13 @@ jQuery(document).ready(function($) {
                             
                             // Update the title field if project_title is available
                             if (response.data.project_title) {
-                                $('#title').val(response.data.project_title);
+                                // For Classic Editor
+                                $('#title').val(response.data.project_title); // Set the post title
+                                
+                                // For Gutenberg Editor
+                                if (typeof wp !== 'undefined' && wp.data && wp.data.dispatch) {
+                                    wp.data.dispatch('core/editor').editPost({ title: response.data.project_title });
+                                }
                             }
 
                             // Update the content editor if project_description is available
@@ -79,24 +85,27 @@ jQuery(document).ready(function($) {
                                 }
 
                                 // For Gutenberg Editor
-                                if (typeof wp !== 'undefined' && wp.data) {
-                                    // Wrap the description in a paragraph block if not already wrapped
-                                    var content = response.data.project_description;
-                                    if (!content.startsWith('<!-- wp:')) {
-                                        content = '<!-- wp:paragraph -->\n<p>' + content + '</p>\n<!-- /wp:paragraph -->';
-                                    }
-                                    wp.data.dispatch('core/editor').editPost({ content: content });
+                                if (typeof wp !== 'undefined' && wp.data && wp.data.dispatch) {
+                                    wp.data.dispatch('core/editor').resetEditorBlocks(); // Reset existing blocks
+                                    wp.data.dispatch('core/editor').editPost({ content: response.data.project_description });
                                 }
                             }
 
                             // Update the category if project_type is available
                             if (response.data.project_type) {
-                                // Attempt to select or create the category
                                 // For Gutenberg Editor
                                 if (typeof wp !== 'undefined' && wp.data) {
                                     const taxonomy = wp.data.select('core').getTaxonomy('project_category');
                                     if (taxonomy) {
-                                        wp.data.dispatch('core/editor').editPost({ terms: { 'project_category': [response.data.project_type] } });
+                                        // Get the term ID by term name
+                                        const terms = wp.data.select('core').getEntityRecords('taxonomy', 'project_category', { search: response.data.project_type });
+                                        const termId = terms && terms.length > 0 ? terms[0].id : null;
+                                        
+                                        if (termId) {
+                                            wp.data.dispatch('core/editor').editPost({ terms: { 'project_category': [termId] } });
+                                        } else {
+                                            // Optionally, handle term creation if it doesn't exist
+                                        }
                                     }
                                 }
                             }
@@ -111,6 +120,17 @@ jQuery(document).ready(function($) {
                             $('#osp_project_license').text('');
                             $('#osp_project_release').html('');
                             $('#osp_project_last_commit').html('');
+                            
+                            // Clear title and content for Gutenberg
+                            if (typeof wp !== 'undefined' && wp.data) {
+                                wp.data.dispatch('core/editor').editPost({ title: '', content: '' });
+                            }
+                            
+                            // For Classic Editor
+                            $('#title').val('');
+                            if (typeof tinyMCE !== 'undefined' && tinyMCE.activeEditor) {
+                                tinyMCE.activeEditor.setContent('');
+                            }
                         }
                     } else {
                         // Display error message in notification
@@ -121,6 +141,17 @@ jQuery(document).ready(function($) {
                         $('#osp_project_license').text('');
                         $('#osp_project_release').html('');
                         $('#osp_project_last_commit').html('');
+                        
+                        // Clear title and content for Gutenberg
+                        if (typeof wp !== 'undefined' && wp.data) {
+                            wp.data.dispatch('core/editor').editPost({ title: '', content: '' });
+                        }
+                        
+                        // For Classic Editor
+                        $('#title').val('');
+                        if (typeof tinyMCE !== 'undefined' && tinyMCE.activeEditor) {
+                            tinyMCE.activeEditor.setContent('');
+                        }
                     }
                 },
                 error: function(xhr, status, error) {
