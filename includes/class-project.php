@@ -332,10 +332,18 @@ class OSProjectsProject {
      * Convert text to blocks for Gutenberg
      */
     public function text_to_blocks( $text ) {
+        // Check if $text already contains Gutenberg blocks
+        if ( preg_match( '/<!--\s*wp:/', $text ) || empty( $text ) ) {
+            return $text; // Already contains Gutenberg blocks, return unchanged
+        }
+
         $enable_gutenberg = OSProjects::get_option( 'enable_gutenberg' );
+ 
+        $parsedown = new Parsedown();
+
         if ( ! $enable_gutenberg ) {
             // Use classic editor content
-            return wp_kses_post( $text );
+            return wp_kses_post( $parsedown->text( $text ) );
         }
 
         // Split the description by double returns to create separate blocks
