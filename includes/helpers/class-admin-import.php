@@ -98,7 +98,6 @@ class OSProjectsAdminImport {
                             // Create a new project post
                             $project_id = wp_insert_post( array(
                                 'post_title'   => sanitize_text_field( $repo['name'] ),
-                                'post_content' => sanitize_textarea_field( $repo['description'] ),
                                 'post_status'  => 'publish',
                                 'post_type'    => 'project',
                             ) );
@@ -109,7 +108,23 @@ class OSProjectsAdminImport {
                             } else {
                                 // Set post meta for repository URL
                                 $updated = update_post_meta( $project_id, 'osp_project_repository', $repo_url );
+                                
                                 if ( $updated ) {
+                                    // Prepare meta data array
+                                    $meta_data = array(
+                                        'osp_project_repository' => $repo_url,
+                                    );
+
+                                    // Update meta fields using the project class instance
+                                    global $OSProjectsProject;
+                                    if ( isset( $OSProjectsProject ) && method_exists( $OSProjectsProject, 'update_project_meta_fields' ) ) {
+                                        $OSProjectsProject->update_project_meta_fields( $project_id, $meta_data );
+                                    } else {
+                                        $error_messages[] = $repo_url . ' - Project class instance not available.';
+                                        $error_count++;
+                                        continue;
+                                    }
+
                                     // Generate View and Edit links
                                     $view_link = get_permalink( $project_id );
                                     $edit_link = get_edit_post_link( $project_id );

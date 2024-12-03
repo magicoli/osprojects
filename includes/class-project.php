@@ -208,6 +208,99 @@ class OSProjectsProject {
     }
 
     /**
+     * Update project meta fields.
+     *
+     * @param int   $post_id  The ID of the post.
+     * @param array $meta_data Associative array of meta keys and values.
+     */
+    public function update_project_meta_fields( $post_id, $meta_data ) {
+        remove_action( 'save_post', array( $this, 'save_project_meta_boxes' ) );
+        foreach ( $meta_data as $key => $value ) {
+            switch ( $key ) {
+                case 'osp_project_website':
+                    update_post_meta( $post_id, $key, sanitize_text_field( $value ) );
+                    break;
+                case 'osp_project_repository':
+                    $repository_url = sanitize_text_field( $value );
+                    update_post_meta( $post_id, $key, $repository_url );
+
+                    // Instantiate OSProjectsGit with the repository URL
+                    $git = new OSProjectsGit( $repository_url );
+
+                    // Check if the repository was cloned successfully
+                    if ( $git->is_repository_cloned() ) {
+                        // Fetch data using OSProjectsGit methods
+                        $license = $git->license();
+                        $version = $git->version();
+                        $release_date = $git->release_date();
+                        $last_release_html = $git->last_release_html();
+                        $last_commit_html = $git->last_commit_html();
+
+                        // Save fetched data as post meta
+                        update_post_meta( $post_id, 'osp_project_license', sanitize_text_field( $license ) );
+                        update_post_meta( $post_id, 'osp_project_stable_release_version', sanitize_text_field( $version ) );
+                        update_post_meta( $post_id, 'osp_project_last_release_html', wp_kses_post( $last_release_html ) );
+                        update_post_meta( $post_id, 'osp_project_last_commit_html', wp_kses_post( $last_commit_html ) );
+
+                        // Set post title if available
+                        $project_title = $git->get_project_title();
+                        if ( $project_title ) {
+                            wp_update_post( array(
+                                'ID'         => $post_id,
+                                'post_title' => sanitize_text_field( $project_title ),
+                            ) );
+                        }
+
+                        // Set post content if available
+                        $project_description = $git->get_project_description();
+                        if ( $project_description ) {
+                            $post_content = self::text_to_blocks( $project_description );
+                            wp_update_post( array(
+                                'ID'           => $post_id,
+                                'post_content' => $post_content,
+                            ) );
+                        }
+
+                        // Assign project category based on 'type'
+                        $project_type = $git->get_project_type();
+                        if ( $project_type ) {
+                            // Ensure term exists
+                            $term = term_exists( $project_type, 'project_category' );
+                            if ( ! $term ) {
+                                $term = wp_insert_term( $project_type, 'project_category' );
+                            }
+                            if ( ! is_wp_error( $term ) ) {
+                                // Set the term for the post using term IDs
+                                wp_set_post_terms( $post_id, array( (int) $term['term_id'] ), 'project_category', false );
+                            }
+                        }
+                    } else {
+                        // Handle cloning failure
+                        update_post_meta( $post_id, 'osp_project_git_error', 'Failed to clone repository.' );
+                    }
+                    break;
+                case 'osp_project_license':
+                case 'osp_project_stable_release_version':
+                case 'osp_project_stable_release_link':
+                case 'osp_project_development_release_version':
+                case 'osp_project_development_release_link':
+                    if ( strpos( $key, 'link' ) !== false ) {
+                        update_post_meta( $post_id, $key, esc_url_raw( $value ) );
+                    } elseif ( strpos( $key, 'version' ) !== false ) {
+                        update_post_meta( $post_id, $key, sanitize_text_field( $value ) );
+                    } else {
+                        update_post_meta( $post_id, $key, sanitize_text_field( $value ) );
+                    }
+                    break;
+                default:
+                    // Handle other meta fields if necessary
+                    break;
+            }
+        }
+        add_action( 'save_post', array( $this, 'save_project_meta_boxes' ) );
+    }
+
+    /**
      * Save the meta boxes
      */
     public function save_project_meta_boxes( $post_id ) {
@@ -232,100 +325,39 @@ class OSProjectsProject {
             }
         }
 
-        // Save the fields.
+        // Prepare meta data array
+        $meta_data = array();
+
         if ( isset( $_POST['osp_project_website'] ) ) {
-            update_post_meta( $post_id, 'osp_project_website', sanitize_text_field( $_POST['osp_project_website'] ) );
+            $meta_data['osp_project_website'] = $_POST['osp_project_website'];
         }
 
         if ( isset( $_POST['osp_project_repository'] ) ) {
-            $repository_url = sanitize_text_field( $_POST['osp_project_repository'] );
-            update_post_meta( $post_id, 'osp_project_repository', $repository_url );
-
-            // Instantiate OSProjectsGit with the repository URL
-            $git = new OSProjectsGit( $repository_url );
-
-            // Check if the repository was cloned successfully
-            if ( $git->is_repository_cloned() ) {
-
-                // Fetch data using OSProjectsGit methods
-                $license = $git->license();
-                $version = $git->version();
-                $release_date = $git->release_date();
-                $last_release_html = $git->last_release_html();
-                $last_commit_html = $git->last_commit_html();
-
-                // Save fetched data as post meta
-                update_post_meta( $post_id, 'osp_project_license', sanitize_text_field( $license ) );
-                update_post_meta( $post_id, 'osp_project_stable_release_version', sanitize_text_field( $version ) );
-                update_post_meta( $post_id, 'osp_project_last_release_html', wp_kses_post( $last_release_html ) );
-                update_post_meta( $post_id, 'osp_project_last_commit_html', wp_kses_post( $last_commit_html ) );
-
-                // Set post title if available
-                $project_title = $git->get_project_title();
-                if ( $project_title ) {
-                    // Prevent infinite loop by temporarily removing the save_post action
-                    remove_action( 'save_post', array( $this, 'save_project_meta_boxes' ) );
-                    wp_update_post( array(
-                        'ID'         => $post_id,
-                        'post_title' => sanitize_text_field( $project_title ),
-                    ) );
-                    add_action( 'save_post', array( $this, 'save_project_meta_boxes' ) );
-                }
-
-                // Set post content if available
-                $project_description = $git->get_project_description();
-                if ( $project_description ) {
-                    remove_action( 'save_post', array( $this, 'save_project_meta_boxes' ) );
-
-                    $post_content = self::text_to_blocks( $project_description );
-
-
-                    wp_update_post( array(
-                        'ID'           => $post_id,
-                        'post_content' => $post_content,
-                    ) );
-                    add_action( 'save_post', array( $this, 'save_project_meta_boxes' ) );
-                }
-
-                // Assign project category based on 'type'
-                $project_type = $git->get_project_type();
-                if ( $project_type ) {
-                    // Ensure term exists
-                    $term = term_exists( $project_type, 'project_category' );
-                    if ( ! $term ) {
-                        $term = wp_insert_term( $project_type, 'project_category' );
-                    }
-                    if ( ! is_wp_error( $term ) ) {
-                        // Set the term for the post using term IDs
-                        wp_set_post_terms( $post_id, array( (int) $term['term_id'] ), 'project_category', false );
-                    }
-                }
-
-            } else {
-                // Handle cloning failure
-                update_post_meta( $post_id, 'osp_project_git_error', 'Failed to clone repository.' );
-            }
+            $meta_data['osp_project_repository'] = $_POST['osp_project_repository'];
         }
 
         if ( isset( $_POST['osp_project_license'] ) ) {
-            update_post_meta( $post_id, 'osp_project_license', sanitize_text_field( $_POST['osp_project_license'] ) );
+            $meta_data['osp_project_license'] = $_POST['osp_project_license'];
         }
 
         if ( isset( $_POST['osp_project_stable_release_version'] ) ) {
-            update_post_meta( $post_id, 'osp_project_stable_release_version', sanitize_text_field( $_POST['osp_project_stable_release_version'] ) );
+            $meta_data['osp_project_stable_release_version'] = $_POST['osp_project_stable_release_version'];
         }
 
         if ( isset( $_POST['osp_project_stable_release_link'] ) ) {
-            update_post_meta( $post_id, 'osp_project_stable_release_link', esc_url_raw( $_POST['osp_project_stable_release_link'] ) );
+            $meta_data['osp_project_stable_release_link'] = $_POST['osp_project_stable_release_link'];
         }
 
         if ( isset( $_POST['osp_project_development_release_version'] ) ) {
-            update_post_meta( $post_id, 'osp_project_development_release_version', sanitize_text_field( $_POST['osp_project_development_release_version'] ) );
+            $meta_data['osp_project_development_release_version'] = $_POST['osp_project_development_release_version'];
         }
 
         if ( isset( $_POST['osp_project_development_release_link'] ) ) {
-            update_post_meta( $post_id, 'osp_project_development_release_link', esc_url_raw( $_POST['osp_project_development_release_link'] ) );
+            $meta_data['osp_project_development_release_link'] = $_POST['osp_project_development_release_link'];
         }
+
+        // Update meta fields using the new method
+        $this->update_project_meta_fields( $post_id, $meta_data );
     }
 
     /**
