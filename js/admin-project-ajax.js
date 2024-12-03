@@ -104,7 +104,7 @@ jQuery(document).ready(function($) {
                                         if (termId) {
                                             wp.data.dispatch('core/editor').editPost({ terms: { 'project_category': [termId] } });
                                         } else {
-                                            // Optionally, handle term creation if it doesn't exist
+                                            // This should not happen, the PHP call should have triggered the creation of the term if needed
                                         }
                                     }
                                 }

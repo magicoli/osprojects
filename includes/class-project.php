@@ -277,15 +277,8 @@ class OSProjectsProject {
                 if ( $project_description ) {
                     remove_action( 'save_post', array( $this, 'save_project_meta_boxes' ) );
 
-                    // Prepare content for Gutenberg or Classic Editor
-                    $enable_gutenberg = OSProjects::get_option( 'enable_gutenberg' );
-                    if ( $enable_gutenberg ) {
-                        // Split the description by double returns to create separate blocks
-                        $post_content = self::text_to_blocks( $project_description );
-                    } else {
-                        // Use classic editor content
-                        $post_content = wp_kses_post( "No Gutenberg detected\n\n" . $project_description );
-                    }
+                    $post_content = self::text_to_blocks( $project_description );
+
 
                     wp_update_post( array(
                         'ID'           => $post_id,
@@ -339,6 +332,12 @@ class OSProjectsProject {
      * Convert text to blocks for Gutenberg
      */
     public function text_to_blocks( $text ) {
+        $enable_gutenberg = OSProjects::get_option( 'enable_gutenberg' );
+        if ( ! $enable_gutenberg ) {
+            // Use classic editor content
+            return wp_kses_post( $text );
+        }
+
         // Split the description by double returns to create separate blocks
         $segments = preg_split('/\n\s*\n/', $text);
         $blocks = array_map(function($segment) {
@@ -445,9 +444,8 @@ class OSProjectsProject {
 
         // Add project title, description, and type
         $project_title = $git->get_project_title();
-        $project_description = $git->get_project_description();
+        $project_description = self::text_to_blocks($git->get_project_description());
         $project_type = $git->get_project_type();
-
         // Prepare the response data
         $data = array(
             'license'                  => $license,
