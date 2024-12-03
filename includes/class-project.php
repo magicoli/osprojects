@@ -340,13 +340,12 @@ class OSProjectsProject {
 
         // Split the description by double returns to create separate blocks
         $segments = preg_split('/\n\s*\n/', $text);
-        $blocks = array_map(function($segment) {
+        $blocks = array_map(function($segment) use ($parsedown) {
             $segment = trim($segment);
-            // Wrap each segment in a paragraph block if not already wrapped
-            if (strpos($segment, '<!-- wp:') !== 0) {
-                return '<!-- wp:paragraph -->' . "\n<p>" . esc_html($segment) . "</p>\n<!-- /wp:paragraph -->";
-            }
-            return $segment;
+            // Convert Markdown to HTML
+            $html = $parsedown->text($segment);
+            // Wrap the HTML in a Gutenberg paragraph block
+            return '<!-- wp:paragraph -->' . "\n" . $html . "\n<!-- /wp:paragraph -->";
         }, $segments);
         return implode("\n\n", $blocks);
     }
