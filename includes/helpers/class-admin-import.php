@@ -80,133 +80,7 @@ class OSProjectsAdminImport {
                 // $github_user_url = isset( $_REQUEST['github_user_url'] ) ? esc_url_raw( $_REQUEST['github_user_url'] ) : ''; // Added to capture the user URL
 
                 if ( ! empty( $selected_repos ) ) {
-                    // Initialize tracking variables
-                    $success_messages = array();
-                    $error_messages   = array();
-                    $imported_count   = 0;
-                    $error_count      = 0;
-
-                    // Process each selected repository
-                    foreach ( $selected_repos as $repo_data ) {
-                        try {
-                            // Decode repository data
-                            $repo = json_decode( base64_decode( $repo_data ), true );
-                            if ( is_array( $repo ) ) {
-                                $repo_url = isset( $repo['html_url'] ) ? esc_url_raw( $repo['html_url'] ) : '';
-
-                                if ( empty( $repo_url ) ) {
-                                    $error_messages[] = 'Repository URL missing.';
-                                    $error_count++;
-                                    continue;
-                                }
-
-                                // Create a new project post
-                                $project_id = wp_insert_post( array(
-                                    'post_title'   => sanitize_text_field( $repo['name'] ),
-                                    'post_status'  => 'publish',
-                                    'post_type'    => 'project',
-                                ) );
-
-                                if ( is_wp_error( $project_id ) ) {
-                                    $error_messages[] = $repo_url . ' - ' . $project_id->get_error_message();
-                                    $error_count++;
-                                } else {
-                                    // Set post meta for repository URL
-                                    $updated = update_post_meta( $project_id, 'osp_project_repository', $repo_url );
-                                    
-                                    if ( $updated ) {
-                                        // Prepare meta data array
-                                        $meta_data = array(
-                                            'osp_project_repository' => $repo_url,
-                                        );
-
-                                        // Update meta fields using the project class instance
-                                        global $OSProjectsProject;
-                                        if ( isset( $OSProjectsProject ) && method_exists( $OSProjectsProject, 'update_project_meta_fields' ) ) {
-                                            $OSProjectsProject->update_project_meta_fields( $project_id, $meta_data );
-                                        } else {
-                                            $error_messages[] = $repo_url . ' - Project class instance not available.';
-                                            $error_count++;
-                                            continue;
-                                        }
-
-                                        // Generate View and Edit links
-                                        $view_link = get_permalink( $project_id );
-                                        $edit_link = get_edit_post_link( $project_id );
-
-                                        $success_messages[] = sprintf(
-                                            '%s imported successfully. <a href="%s" target="_blank">View Project</a> | <a href="%s" target="_blank">Edit Project</a>',
-                                            esc_html( $repo_url ),
-                                            esc_url( $view_link ),
-                                            esc_url( $edit_link )
-                                        );
-                                        $imported_count++;
-                                    } else {
-                                        $error_messages[] = $repo_url . ' - Failed to set repository URL.';
-                                        $error_count++;
-                                    }
-                                }
-                            } else {
-                                $error_messages[] = 'Invalid repository data format.';
-                                $error_count++;
-                            }
-                        } catch (Exception $e) {
-                            $error_messages[] = sprintf(
-                                '%s - %s. <a href="%s">%s</a>',
-                                esc_html( isset( $repo_url ) ? $repo_url : 'Unknown Repository' ),
-                                esc_html( $e->getMessage() ),
-                                esc_url( admin_url( 'import.php?import=osprojects-importer&github_user_url=' . urlencode($github_user_url) ) ), // Modified to include GitHub user URL
-                                esc_html__( 'Try again', 'osprojects' )
-                            );
-                            $error_count++;
-                            continue;
-                        }
-                    }
-
-                    // Prepare success notification
-                    if ( ! empty( $success_messages ) ) {
-                        echo '<div class="notice notice-success"><p><strong>' . esc_html__( 'Import GitHub Repositories:', 'osprojects' ) . '</strong></p><ul>';
-                        foreach ( $success_messages as $message ) {
-                            echo '<li>' . wp_kses( $message, array(
-                                'a' => array(
-                                    'href'   => array(),
-                                    'target' => array(),
-                                ),
-                                'strong' => array(),
-                            ) ) . '</li>';
-                        }
-                        echo '</ul>';
-                        printf(
-                            /* translators: 1: Number of imported repositories */
-                            esc_html__( 'Total Imported: %1$d', 'osprojects' ),
-                            $imported_count
-                        );
-                        echo '</div>';
-                    }
-
-                    // Prepare error notification
-                    if ( ! empty( $error_messages ) ) {
-                        echo '<div class="notice notice-error"><p><strong>' . esc_html__( 'Import GitHub Repositories:', 'osprojects' ) . '</strong></p><ul>';
-                        foreach ( $error_messages as $message ) {
-                            echo '<li>' . wp_kses( $message, array(
-                                'a' => array(
-                                    'href'   => array(),
-                                    'target' => array(),
-                                ),
-                                'strong' => array(),
-                            ) ) . '</li>';
-                        }
-                        echo '</ul>';
-                        printf(
-                            /* translators: 1: Number of errors */
-                            esc_html__( 'Total Errors: %1$d', 'osprojects' ),
-                            $error_count
-                        );
-                        echo '</div>';
-                    }
-
-                    // Link back to the GitHub importer page
-                    echo '<p><a href="' . esc_url( admin_url( 'import.php?import=osprojects-importer' ) ) . '">' . esc_html__( 'Back to Importer', 'osprojects' ) . '</a></p>';
+                    $this->import_repositories( $selected_repos, $github_user_url );
                 } else {
                     // No repositories selected
                     echo '<div class="notice notice-warning"><p>' . esc_html__( 'No repositories were selected for import.', 'osprojects' ) . '</p></div>';
@@ -230,6 +104,142 @@ class OSProjectsAdminImport {
 
         // Display the initial form
         $this->display_initial_form();
+    }
+
+    public function import_repositories( $selected_repos, $github_user_url = null ) {
+        if(empty($selected_repos)) {
+            return;
+        }
+        if(!is_array($selected_repos)) {
+            return;
+        }
+        // Initialize tracking variables
+        $success_messages = array();
+        $error_messages   = array();
+        $imported_count   = 0;
+        $error_count      = 0;
+
+        // Process each selected repository
+        foreach ( $selected_repos as $repo_data ) {
+            try {
+                // Decode repository data
+                $repo = json_decode( base64_decode( $repo_data ), true );
+                if ( is_array( $repo ) ) {
+                    $repo_url = isset( $repo['html_url'] ) ? esc_url_raw( $repo['html_url'] ) : '';
+
+                    if ( empty( $repo_url ) ) {
+                        $error_messages[] = 'Repository URL missing.';
+                        $error_count++;
+                        continue;
+                    }
+
+                    // Create a new project post
+                    $project_id = wp_insert_post( array(
+                        'post_title'   => sanitize_text_field( $repo['name'] ),
+                        'post_status'  => 'publish',
+                        'post_type'    => 'project',
+                    ) );
+
+                    if ( is_wp_error( $project_id ) ) {
+                        $error_messages[] = $repo_url . ' - ' . $project_id->get_error_message();
+                        $error_count++;
+                    } else {
+                        // Set post meta for repository URL
+                        $updated = update_post_meta( $project_id, 'osp_project_repository', $repo_url );
+                        
+                        if ( $updated ) {
+                            // Prepare meta data array
+                            $meta_data = array(
+                                'osp_project_repository' => $repo_url,
+                            );
+
+                            // Update meta fields using the project class instance
+                            global $OSProjectsProject;
+                            if ( isset( $OSProjectsProject ) && method_exists( $OSProjectsProject, 'update_project_meta_fields' ) ) {
+                                $OSProjectsProject->update_project_meta_fields( $project_id, $meta_data );
+                            } else {
+                                $error_messages[] = $repo_url . ' - Project class instance not available.';
+                                $error_count++;
+                                continue;
+                            }
+
+                            // Generate View and Edit links
+                            $view_link = get_permalink( $project_id );
+                            $edit_link = get_edit_post_link( $project_id );
+
+                            $success_messages[] = sprintf(
+                                '%s imported successfully. <a href="%s" target="_blank">View Project</a> | <a href="%s" target="_blank">Edit Project</a>',
+                                esc_html( $repo_url ),
+                                esc_url( $view_link ),
+                                esc_url( $edit_link )
+                            );
+                            $imported_count++;
+                        } else {
+                            $error_messages[] = $repo_url . ' - Failed to set repository URL.';
+                            $error_count++;
+                        }
+                    }
+                } else {
+                    $error_messages[] = 'Invalid repository data format.';
+                    $error_count++;
+                }
+            } catch (Exception $e) {
+                $error_messages[] = sprintf(
+                    '%s - %s. <a href="%s">%s</a>',
+                    esc_html( isset( $repo_url ) ? $repo_url : 'Unknown Repository' ),
+                    esc_html( $e->getMessage() ),
+                    esc_url( admin_url( 'import.php?import=osprojects-importer&github_user_url=' . urlencode($github_user_url) ) ), // Modified to include GitHub user URL
+                    esc_html__( 'Try again', 'osprojects' )
+                );
+                $error_count++;
+                continue;
+            }
+        }
+
+        // Prepare success notification
+        if ( ! empty( $success_messages ) ) {
+            echo '<div class="notice notice-success"><p><strong>' . esc_html__( 'Import GitHub Repositories:', 'osprojects' ) . '</strong></p><ul>';
+            foreach ( $success_messages as $message ) {
+                echo '<li>' . wp_kses( $message, array(
+                    'a' => array(
+                        'href'   => array(),
+                        'target' => array(),
+                    ),
+                    'strong' => array(),
+                ) ) . '</li>';
+            }
+            echo '</ul>';
+            printf(
+                /* translators: 1: Number of imported repositories */
+                esc_html__( 'Total Imported: %1$d', 'osprojects' ),
+                $imported_count
+            );
+            echo '</div>';
+        }
+
+        // Prepare error notification
+        if ( ! empty( $error_messages ) ) {
+            echo '<div class="notice notice-error"><p><strong>' . esc_html__( 'Import GitHub Repositories:', 'osprojects' ) . '</strong></p><ul>';
+            foreach ( $error_messages as $message ) {
+                echo '<li>' . wp_kses( $message, array(
+                    'a' => array(
+                        'href'   => array(),
+                        'target' => array(),
+                    ),
+                    'strong' => array(),
+                ) ) . '</li>';
+            }
+            echo '</ul>';
+            printf(
+                /* translators: 1: Number of errors */
+                esc_html__( 'Total Errors: %1$d', 'osprojects' ),
+                $error_count
+            );
+            echo '</div>';
+        }
+
+        // Link back to the GitHub importer page
+        echo '<p><a href="' . esc_url( admin_url( 'import.php?import=osprojects-importer' ) ) . '">' . esc_html__( 'Back to Importer', 'osprojects' ) . '</a></p>';
     }
 
     private function display_initial_form() {
