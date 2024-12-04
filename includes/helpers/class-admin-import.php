@@ -126,7 +126,13 @@ class OSProjectsAdminImport {
                 $repo = json_decode( base64_decode( $repo_data ), true );
                 if ( is_array( $repo ) ) {
                     $repo_url = isset( $repo['html_url'] ) ? esc_url_raw( $repo['html_url'] ) : '';
-
+                    $project_id = self::has_project($repo_url);
+                    if($project_id !== false) {
+                        $success_messages[] = sprintf( __( '%s had already a project.', 'osprojects' ), esc_html( $repo_url ) )
+                        . self::project_action_link( $project_id, 'view', '_blank' ) . ' | '
+                        . self::project_action_link( $project_id, 'edit', '_blank' );
+                        continue;
+                    }
                     if ( empty( $repo_url ) ) {
                         $error_messages[] = 'Repository URL missing.';
                         $error_count++;
@@ -384,6 +390,38 @@ class OSProjectsAdminImport {
         }
 
         return $existing_repos;
+    }
+
+    private static function has_project( $repo_url ) {
+        $args = array(
+            'post_type'      => 'project',
+            'meta_query'     => array(
+                array(
+                    'key'   => 'osp_project_repository',
+                    'value' => $repo_url,
+                ),
+            ),
+            'fields'         => 'ids',
+        );
+        $project_ids = get_posts( $args );
+        if (empty($project_ids)) {
+            return false;
+        } else {
+            return $project_ids[0];
+        }
+    }
+
+    public static function project_action_link( $post_id, $action = 'view', $target = '_blank' ) {
+        $view_link = get_permalink( $post_id );
+        if ( ! empty( $view_link ) ) {
+            return sprintf(
+                '<a href="%s" target="%s">%s</a>',
+                esc_url( $view_link ),
+                esc_attr( $target ),
+                esc_html__( 'View Project', 'osprojects' )
+            );
+        }
+        return '';
     }
 
     /**
