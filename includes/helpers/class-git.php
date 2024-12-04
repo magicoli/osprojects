@@ -326,18 +326,27 @@ class OSProjectsGit
 
     public function get_project_description()
     {
+        $description = null;
+
         if (!empty($this->fileContents['README.md'])) {
             $content = $this->fileContents['README.md'];
             // Extract content under ## Description until the next heading
             if (preg_match('/##\s*Description\s*(.*?)\n##/s', $content, $matches)) {
-                $description = trim($matches[1]);
+                $description = $matches[1];
             } elseif (preg_match('/##\s*Description\s*(.*)/s', $content, $matches)) {
                 // Fallback if there's no subsequent heading
-                $description = trim($matches[1]);
+                $description = $matches[1];
             } else {
-                $description = ''; // No Description section found
+                // If description is still empty, use the whole readme file except the first line if it's a first-level title
+                $lines = preg_split('/\r\n|\r|\n/', $content);
+                if (!empty($lines)) {
+                    $first_line = $lines[0];
+                    if (preg_match('/^#\s+/', $first_line)) {
+                        array_shift($lines); // Remove the first line (title)
+                    }
+                    $description = implode("\n", $lines);
+                }
             }
-            return $description;
         } elseif (!empty($this->fileContents['readme.txt'])) {
             $content = $this->fileContents['readme.txt'];
             // Extract content under == Description == until the next section
@@ -347,11 +356,19 @@ class OSProjectsGit
                 // Fallback if there's no subsequent section
                 $description = trim($matches[1]);
             } else {
-                $description = ''; // No Description section found
+                // If description is still empty, use the whole readme file except the first line if it's a first-level title
+                $lines = preg_split('/\r\n|\r|\n/', $content);
+                if (!empty($lines)) {
+                    $first_line = $lines[0];
+                    if (preg_match('/^==\s*.+\s*==$/', $first_line)) {
+                        array_shift($lines); // Remove the first line (title)
+                    }
+                    $description = implode("\n", $lines);
+                }
             }
-            return $description;
         }
-        return null;
+
+        return trim($description);
     }
 
     public function license()
