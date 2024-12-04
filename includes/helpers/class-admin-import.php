@@ -126,11 +126,11 @@ class OSProjectsAdminImport {
                 $repo = json_decode( base64_decode( $repo_data ), true );
                 if ( is_array( $repo ) ) {
                     $repo_url = isset( $repo['html_url'] ) ? esc_url_raw( $repo['html_url'] ) : '';
-                    $project_id = self::has_project($repo_url);
+                    $project_id = OSProjectsProject::get_repo_project_id( $repo_url );
                     if($project_id !== false) {
                         $success_messages[] = sprintf( __( '%s had already a project.', 'osprojects' ), esc_html( $repo_url ) )
-                        . self::project_action_link( $project_id, 'view', '_blank' ) . ' | '
-                        . self::project_action_link( $project_id, 'edit', '_blank' );
+                        . OSProjectsProject::project_action_link( $project_id, 'view', '_blank' ) . ' | '
+                        . OSProjectsProject::project_action_link( $project_id, 'edit', '_blank' );
                         continue;
                     }
                     if ( empty( $repo_url ) ) {
@@ -161,6 +161,9 @@ class OSProjectsAdminImport {
 
                             // Update meta fields using the project class instance
                             global $OSProjectsProject;
+                            if ( ! isset( $OSProjectsProject ) ) {
+                                $OSProjectsProject = new OSProjectsProject();
+                            }
                             if ( isset( $OSProjectsProject ) && method_exists( $OSProjectsProject, 'update_project_meta_fields' ) ) {
                                 $OSProjectsProject->update_project_meta_fields( $project_id, $meta_data );
                             } else {
@@ -170,15 +173,9 @@ class OSProjectsAdminImport {
                             }
 
                             // Generate View and Edit links
-                            $view_link = get_permalink( $project_id );
-                            $edit_link = get_edit_post_link( $project_id );
-
-                            $success_messages[] = sprintf(
-                                '%s imported successfully. <a href="%s" target="_blank">View Project</a> | <a href="%s" target="_blank">Edit Project</a>',
-                                esc_html( $repo_url ),
-                                esc_url( $view_link ),
-                                esc_url( $edit_link )
-                            );
+                            $success_messages[] = sprintf( __( '%s imported successfully.', 'osprojects' ), esc_html( $repo_url ) )
+                                . ' ' . OSProjectsProject::project_action_link( $project_id, 'view', '_blank' )
+                                . ' | ' . OSProjectsProject::project_action_link( $project_id, 'edit', '_blank' );
                             $imported_count++;
                         } else {
                             $error_messages[] = $repo_url . ' - Failed to set repository URL.';
@@ -317,26 +314,27 @@ class OSProjectsAdminImport {
                         <?php foreach ( $repositories as $repo ) :
                             $repo_url = $repo['html_url'];
                             // Check if the repository is already imported
-                            $is_imported = isset( $existing_repos[ $repo_url ] );
-                            $project_post_id = $is_imported ? $existing_repos[ $repo_url ] : null;
+                            $project_id = OSProjectsProject::get_repo_project_id( $repo_url );
                             ?>
                             <tr>
                                 <th scope="row" class="check-column">
-                                    <input type="checkbox" name="selected_repos[]" value="<?php echo esc_attr( base64_encode( wp_json_encode( $repo ) ) ); ?>" <?php if ( $is_imported ) echo 'disabled'; ?> />
+                                    <input type="checkbox" name="selected_repos[]" value="<?php echo esc_attr( base64_encode( wp_json_encode( $repo ) ) ); ?>" <?php if ( $project_id ) echo 'disabled'; ?> />
                                 </th>
                                 <td><?php echo esc_html( $repo['name'] ); ?></td>
                                 <td>
-                                    <a href="<?php echo esc_url( $repo_url ); ?>" target="_blank"><?php esc_html_e( 'Repository', 'osprojects' ); ?></a>
-                                    <?php if ( $is_imported && $project_post_id ) :
-                                        $project_permalink = get_permalink( $project_post_id );
-                                        $project_edit_link = get_edit_post_link( $project_post_id );
-                                        if ( $project_permalink ) : ?>
-                                            | <a href="<?php echo esc_url( $project_permalink ); ?>" target="_blank"><?php esc_html_e( 'View Project', 'osprojects' ); ?></a>
-                                        <?php endif;
-                                        if ( $project_edit_link ) : ?>
-                                            | <a href="<?php echo esc_url( $project_edit_link ); ?>"><?php esc_html_e( 'Edit Project', 'osprojects' ); ?></a>
-                                        <?php endif;
-                                    endif; ?>
+                                    <?php
+                                    $actions = array();
+                                    $actions['repo'] = sprintf(
+                                        '<a href="%s" target="_blank">%s</a>',
+                                        esc_url( $repo_url ),
+                                        esc_html__( 'Repository', 'osprojects' )
+                                    );
+                                    if($project_id) {
+                                        $actions['view'] = OSProjectsProject::project_action_link( $project_id, 'view', '_blank' );
+                                        $actions['edit'] = OSProjectsProject::project_action_link( $project_id, 'edit', '_blank' );
+                                    }
+                                    echo implode( ' | ', $actions );
+                                    ?>
                                 </td>
                                 <td><?php echo esc_html( $repo['description'] ); ?></td>
                             </tr>
@@ -390,38 +388,6 @@ class OSProjectsAdminImport {
         }
 
         return $existing_repos;
-    }
-
-    private static function has_project( $repo_url ) {
-        $args = array(
-            'post_type'      => 'project',
-            'meta_query'     => array(
-                array(
-                    'key'   => 'osp_project_repository',
-                    'value' => $repo_url,
-                ),
-            ),
-            'fields'         => 'ids',
-        );
-        $project_ids = get_posts( $args );
-        if (empty($project_ids)) {
-            return false;
-        } else {
-            return $project_ids[0];
-        }
-    }
-
-    public static function project_action_link( $post_id, $action = 'view', $target = '_blank' ) {
-        $view_link = get_permalink( $post_id );
-        if ( ! empty( $view_link ) ) {
-            return sprintf(
-                '<a href="%s" target="%s">%s</a>',
-                esc_url( $view_link ),
-                esc_attr( $target ),
-                esc_html__( 'View Project', 'osprojects' )
-            );
-        }
-        return '';
     }
 
     /**

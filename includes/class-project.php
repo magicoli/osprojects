@@ -511,5 +511,48 @@ class OSProjectsProject {
             $submenu_file = 'edit-tags.php?taxonomy=project_category&post_type=project';
         }
     }
+
+    public static function get_repo_project_id( $repo_url ) {
+        $args = array(
+            'post_type'      => 'project',
+            'meta_query'     => array(
+                array(
+                    'key'   => 'osp_project_repository',
+                    'value' => $repo_url,
+                ),
+            ),
+            'fields'         => 'ids',
+        );
+        $project_ids = get_posts( $args );
+        if (empty($project_ids)) {
+            return false;
+        } else {
+            return $project_ids[0];
+        }
+    }
+
+    public static function project_action_link( $post_id, $action = 'view', $target = '_blank' ) {
+        $view_link = get_permalink( $post_id );
+        switch ($action) {
+            case 'edit':
+                $link_text = esc_html__( 'Edit Project', 'osprojects' );
+                $view_link = get_edit_post_link( $post_id );
+                break;
+            case 'view':
+            default:
+                $link_text = esc_html__( 'View Project', 'osprojects' );
+                break;
+        }
+        if ( ! empty( $view_link ) ) {
+            return sprintf(
+                '<a href="%s" target="%s">%s</a>',
+                esc_url( $view_link ),
+                esc_attr( $target ),
+                esc_html__( 'View Project', 'osprojects' )
+            );
+        }
+        return '';
+    }
+
 }
 
