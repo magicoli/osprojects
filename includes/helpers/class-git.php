@@ -305,6 +305,97 @@ class OSProjectsGit
         return null;
     }
 
+    /**
+     * Collect useful metadata from composer.json / package.json to use as tags.
+     * Returns an array of tag strings (may be empty).
+     */
+    public function get_project_tags()
+    {
+        $tags = array();
+
+        // Helper to merge and normalise tag values
+        $add_tag = function($value) use (&$tags) {
+            if (empty($value)) return;
+            if (is_array($value)) {
+                foreach ($value as $v) {
+                    $v = trim((string) $v);
+                    if ($v !== '') $tags[] = $v;
+                }
+            } else {
+                $v = trim((string) $value);
+                if ($v !== '') $tags[] = $v;
+            }
+        };
+
+        // composer.json
+        if (!empty($this->fileContents['composer.json'])) {
+            $json = json_decode($this->fileContents['composer.json'], true);
+            if (is_array($json)) {
+                if (isset($json['keywords']) && is_array($json['keywords'])) {
+                    $add_tag($json['keywords']);
+                }
+                if (isset($json['type'])) {
+                    $add_tag($json['type']);
+                }
+                if (isset($json['name'])) {
+                    $name = (string) $json['name'];
+                    $add_tag($name);
+                    // split vendor/package
+                    if (strpos($name, '/') !== false) {
+                        list($vendor, $pkg) = explode('/', $name, 2);
+                        $add_tag($vendor);
+                        $add_tag($pkg);
+                    }
+                }
+                // include top-level require package names (vendor parts) as tags
+                if (isset($json['require']) && is_array($json['require'])) {
+                    foreach ($json['require'] as $req_name => $_) {
+                        if (strpos($req_name, '/') !== false) {
+                            list($vendor, $pkg) = explode('/', $req_name, 2);
+                            $add_tag($vendor);
+                            $add_tag($pkg);
+                        } else {
+                            $add_tag($req_name);
+                        }
+                    }
+                }
+            }
+        }
+
+        // package.json
+        if (!empty($this->fileContents['package.json'])) {
+            $json = json_decode($this->fileContents['package.json'], true);
+            if (is_array($json)) {
+                if (isset($json['keywords']) && is_array($json['keywords'])) {
+                    $add_tag($json['keywords']);
+                }
+                if (isset($json['name'])) {
+                    $name = (string) $json['name'];
+                    $add_tag($name);
+                    if (strpos($name, '/') !== false) {
+                        list($vendor, $pkg) = explode('/', $name, 2);
+                        $add_tag($vendor);
+                        $add_tag($pkg);
+                    }
+                }
+            }
+        }
+
+        // Normalise: unique, trim, lower-case-ish but preserve original for readability
+        $normalized = array();
+        foreach ($tags as $t) {
+            $t = trim($t);
+            if ($t === '') continue;
+            // Lowercase for uniqueness but keep original-case value
+            $key = mb_strtolower($t);
+            if (!isset($normalized[$key])) {
+                $normalized[$key] = $t;
+            }
+        }
+
+        return array_values($normalized);
+    }
+
     public function get_project_title()
     {
         if (!empty($this->fileContents['README.md'])) {

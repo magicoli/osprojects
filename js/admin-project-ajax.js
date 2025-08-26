@@ -91,22 +91,41 @@ jQuery(document).ready(function($) {
                                 }
                             }
 
-                            // Update the category if project_type is available
-                            if (response.data.project_type) {
-                                // For Gutenberg Editor
+                            // Note: project categories are intentionally left as a manual choice.
+                            // Update tags if project_tags are available
+                            if (response.data.project_tags && response.data.project_tags.length) {
+                                // For Gutenberg Editor: need term IDs
                                 if (typeof wp !== 'undefined' && wp.data) {
-                                    const taxonomy = wp.data.select('core').getTaxonomy('project_category');
-                                    if (taxonomy) {
-                                        // Get the term ID by term name
-                                        const terms = wp.data.select('core').getEntityRecords('taxonomy', 'project_category', { search: response.data.project_type });
-                                        const termId = terms && terms.length > 0 ? terms[0].id : null;
-                                        
-                                        if (termId) {
-                                            wp.data.dispatch('core/editor').editPost({ terms: { 'project_category': [termId] } });
-                                        } else {
-                                            // This should not happen, the PHP call should have triggered the creation of the term if needed
+                                    const tagNames = response.data.project_tags;
+                                    const taxonomy = 'post_tag';
+                                    const idPromises = tagNames.map(name => {
+                                        try {
+                                            const records = wp.data.select('core').getEntityRecords('taxonomy', taxonomy, { search: name });
+                                            if (records && records.length) {
+                                                return Promise.resolve(records[0].id);
+                                            }
+                                        } catch (e) {
+                                            // fallthrough to creation
                                         }
-                                    }
+                                        // Create the tag if it doesn't exist
+                                        return wp.data.dispatch('core').createEntityRecord('taxonomy', taxonomy, { name: name })
+                                            .then(created => created && created.id ? created.id : null)
+                                            .catch(() => null);
+                                    });
+
+                                    Promise.all(idPromises).then(ids => {
+                                        const validIds = ids.filter(Boolean);
+                                        if (validIds.length) {
+                                            wp.data.dispatch('core/editor').editPost({ terms: { 'post_tag': validIds } });
+                                        }
+                                    }).catch(err => {
+                                        console.error('Error resolving tags:', err);
+                                    });
+                                }
+
+                                // For Classic Editor: populate the tags input field
+                                if ($('#new-tag-post_tag').length) {
+                                    $('#new-tag-post_tag').val(response.data.project_tags.join(', '));
                                 }
                             }
                             

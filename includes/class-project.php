@@ -86,7 +86,7 @@ class OSProjectsProject {
             'supports'           => array( 'title', 'editor', 'thumbnail', 'excerpt', 'comments', 'revisions' ),
             'show_in_rest'       => OSProjects::get_option('enable_gutenberg'), // Use the OSProjectsSettings method for show_in_rest
             'show_in_admin_bar'  => true, // Ensure it shows in the admin bar
-            'taxonomies'         => array( 'project_category' )
+            'taxonomies'         => array( 'project_category', 'post_tag' )
         );
 
         register_post_type( 'project', $args );
@@ -121,6 +121,8 @@ class OSProjectsProject {
         );
 
         register_taxonomy( 'project_category', 'project', $args );
+    // Ensure the built-in post_tag taxonomy is available for projects
+    register_taxonomy_for_object_type( 'post_tag', 'project' );
     }
 
     /**
@@ -261,18 +263,20 @@ class OSProjectsProject {
                             ) );
                         }
 
-                        // Assign project category based on 'type'
-                        $project_type = $git->get_project_type();
-                        if ( $project_type ) {
-                            // Ensure term exists
-                            $term = term_exists( $project_type, 'project_category' );
-                            if ( ! $term ) {
-                                $term = wp_insert_term( $project_type, 'project_category' );
+                        // Collect tags from package metadata and assign as post tags.
+                        $project_tags = array();
+                        if ( method_exists( $git, 'get_project_tags' ) ) {
+                            $project_tags = $git->get_project_tags();
+                        } else {
+                            $project_type = $git->get_project_type();
+                            if ( $project_type ) {
+                                $project_tags[] = $project_type;
                             }
-                            if ( ! is_wp_error( $term ) ) {
-                                // Set the term for the post using term IDs
-                                wp_set_post_terms( $post_id, array( (int) $term['term_id'] ), 'project_category', false );
-                            }
+                        }
+
+                        if ( ! empty( $project_tags ) ) {
+                            // Assign as post tags (post_tag taxonomy)
+                            wp_set_post_terms( $post_id, $project_tags, 'post_tag', false );
                         }
                     } else {
                         // Handle cloning failure
@@ -433,6 +437,16 @@ class OSProjectsProject {
             'edit-tags.php?taxonomy=project_category&post_type=project',
             null
         );
+
+        // Add "Tags" submenu for post_tag
+        add_submenu_page(
+            'osprojects',
+            __( 'Tags', 'osprojects' ),
+            __( 'Tags', 'osprojects' ),
+            'manage_options',
+            'edit-tags.php?taxonomy=post_tag&post_type=project',
+            null
+        );
     }
 
     /**
@@ -485,6 +499,12 @@ class OSProjectsProject {
         $project_title = $git->get_project_title();
         $project_description = self::text_to_blocks($git->get_project_description());
         $project_type = $git->get_project_type();
+        $project_tags = array();
+        if ( method_exists( $git, 'get_project_tags' ) ) {
+            $project_tags = $git->get_project_tags();
+        } elseif ( $project_type ) {
+            $project_tags[] = $project_type;
+        }
         // Prepare the response data
         $data = array(
             'license'                  => $license,
@@ -495,6 +515,7 @@ class OSProjectsProject {
             'project_title'            => $project_title,
             'project_description'      => $project_description,
             'project_type'             => $project_type,
+            'project_tags'             => $project_tags,
         );
 
         wp_send_json_success( $data );
@@ -528,6 +549,160 @@ class OSProjectsProject {
             return false;
         } else {
             return $project_ids[0];
+        }
+    }
+
+    /**
+     * Refresh metadata for all projects by re-calling update_project_meta_fields for each post
+     * This will update tags, license, releases and other fetched data from the repository.
+     */
+    public static function refresh_all_projects() {
+        // Deprecated: prefer queued batched processing. Keep for backwards compat but run safely.
+        $args = array(
+            'post_type'      => 'project',
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+        );
+        $project_ids = get_posts( $args );
+        if ( empty( $project_ids ) ) return;
+
+        foreach ( $project_ids as $post_id ) {
+            try {
+                $repo_url = get_post_meta( $post_id, 'osp_project_repository', true );
+                if ( empty( $repo_url ) ) continue;
+
+                $git = new OSProjectsGit( $repo_url );
+                if ( ! $git->is_repository_cloned() ) {
+                    continue;
+                }
+
+                $meta_data = array( 'osp_project_repository' => $repo_url );
+                $instance = new self();
+                if ( method_exists( $instance, 'update_project_meta_fields' ) ) {
+                    $instance->update_project_meta_fields( $post_id, $meta_data );
+                }
+            } catch ( Exception $e ) {
+                error_log( 'OSProjects refresh error for post ' . $post_id . ': ' . $e->getMessage() );
+                continue;
+            } catch ( Error $e ) {
+                error_log( 'OSProjects refresh fatal error for post ' . $post_id . ': ' . $e->getMessage() );
+                continue;
+            }
+        }
+    }
+
+    /**
+     * Enqueue a full refresh queue. If $post_ids is null, all projects are queued.
+     */
+    public static function enqueue_refresh_queue( $post_ids = null ) {
+        if ( $post_ids === null ) {
+            $args = array(
+                'post_type'      => 'project',
+                'posts_per_page' => -1,
+                'fields'         => 'ids',
+            );
+            $post_ids = get_posts( $args );
+        }
+        $post_ids = array_values( (array) $post_ids );
+        update_option( 'osprojects_refresh_queue', $post_ids );
+        $total = count( $post_ids );
+        // Compute dynamic batch size: for <100 projects use batch_size=1 (more frequent updates)
+        if ( $total < 100 ) {
+            $batch_size = 1;
+        } else {
+            $batch_size = (int) ceil( $total / 100 );
+            if ( $batch_size > 10 ) $batch_size = 10; // maximum 10 per batch
+            if ( $batch_size < 1 ) $batch_size = 1;
+        }
+
+        update_option( 'osprojects_refresh_progress', array(
+            'total'       => $total,
+            'processed'   => 0,
+            'failed'      => 0,
+            'failed_items'=> array(),
+            'started'     => time(),
+            'finished'    => 0,
+            'batch_size'  => $batch_size,
+        ) );
+
+        // Mark as running
+        update_option( 'osprojects_refresh_running', true );
+    }
+
+    /**
+     * Process a batch from the refresh queue. Safe to be run repeatedly via single-schedule events.
+     */
+    public static function process_refresh_queue_batch( $batch_size = 10 ) {
+        $queue = get_option( 'osprojects_refresh_queue', array() );
+        if ( empty( $queue ) ) {
+            $progress = get_option( 'osprojects_refresh_progress', array() );
+            $progress['finished'] = time();
+            update_option( 'osprojects_refresh_progress', $progress );
+            // Clear running flag
+            update_option( 'osprojects_refresh_running', false );
+            return;
+        }
+
+        // Allow dynamic batch size from progress
+        $progress = get_option( 'osprojects_refresh_progress', array() );
+        if ( isset( $progress['batch_size'] ) && $progress['batch_size'] > 0 ) {
+            $batch_size = (int) $progress['batch_size'];
+        }
+
+        $batch = array_splice( $queue, 0, $batch_size );
+    $processed = 0;
+    $failed = 0;
+    $failed_items = array();
+
+        foreach ( $batch as $post_id ) {
+            try {
+                $repo_url = get_post_meta( $post_id, 'osp_project_repository', true );
+                if ( empty( $repo_url ) ) {
+                    $failed++;
+                    continue;
+                }
+
+                // Attempt to refresh metadata for this project
+                $instance = new self();
+                $meta_data = array( 'osp_project_repository' => $repo_url );
+                if ( method_exists( $instance, 'update_project_meta_fields' ) ) {
+                    $instance->update_project_meta_fields( $post_id, $meta_data );
+                }
+                $processed++;
+            } catch ( Exception $e ) {
+                error_log( 'OSProjects refresh error for post ' . $post_id . ': ' . $e->getMessage() );
+                $failed++;
+                $failed_items[] = array( 'post_id' => $post_id, 'title' => get_the_title( $post_id ), 'error' => $e->getMessage() );
+                continue;
+            } catch ( Error $e ) {
+                error_log( 'OSProjects refresh fatal error for post ' . $post_id . ': ' . $e->getMessage() );
+                $failed++;
+                $failed_items[] = array( 'post_id' => $post_id, 'title' => get_the_title( $post_id ), 'error' => $e->getMessage() );
+                continue;
+            }
+        }
+
+        // Update queue and progress
+        update_option( 'osprojects_refresh_queue', $queue );
+    $progress = get_option( 'osprojects_refresh_progress', array( 'total' => 0, 'processed' => 0, 'failed' => 0, 'failed_items' => array() ) );
+    $progress['processed'] = isset( $progress['processed'] ) ? $progress['processed'] + $processed : $processed;
+    $progress['failed'] = isset( $progress['failed'] ) ? $progress['failed'] + $failed : $failed;
+    if ( ! isset( $progress['failed_items'] ) ) $progress['failed_items'] = array();
+    $progress['failed_items'] = array_merge( $progress['failed_items'], $failed_items );
+        if ( empty( $queue ) ) {
+            $progress['finished'] = time();
+        }
+        update_option( 'osprojects_refresh_progress', $progress );
+
+        // Schedule next batch if queue remains
+        if ( ! empty( $queue ) ) {
+            if ( ! wp_next_scheduled( 'osprojects_process_refresh_batch' ) ) {
+                // Adjust delay: make it short for small batches
+                wp_schedule_single_event( time() + 2, 'osprojects_process_refresh_batch' );
+            }
+        } else {
+            // Clear running flag when queue drained
+            update_option( 'osprojects_refresh_running', false );
         }
     }
 
