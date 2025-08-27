@@ -24,7 +24,7 @@
  * - cleanup(): Remove the temporary directory.
  * 
  * @package osprojects
- * @since 0.1.0
+ * @since 1.0.0
  */
 class OSProjectsGit
 {

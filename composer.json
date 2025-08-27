@@ -1,6 +1,6 @@
 {
     "name": "magicoli/wrap",
-    "description": "WordPress-based authentication for third-party applications via .htaccess",
+    "description": "Open Source Projects plugin for WordPress",
     "type": "wordpress-plugin",
     "license": "AGPL-3.0-or-later",
     "authors": [

@@ -1,7 +1,7 @@
 {
   "name": "osprojects",
-  "description": "Showcase Open Source Projects",
-  "version": "0.1.0",
+  "description": "Open Source Projects plugin for WordPress",
+  "version": "1.0.0",
   "main": "Gruntfile.js",
   "author": "Magiiic.org",
   "license": "AGPL-3.0-or-later",
