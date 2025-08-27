@@ -63,8 +63,12 @@ class OSProjectsProject {
         // Change columns orderr
         add_filter( 'manage_edit-project_columns', array( $this, 'reorder_project_columns' ) );
 
-        // Add custom post status actions
-        add_filter( 'post_row_actions', array( $this, 'add_ignore_row_action' ), 10, 2 );
+        // Custom post row actions for non-hierarchical post types (treated like posts by WordPress)
+        // add_filter( 'post_row_actions', array( $this, 'add_ignore_row_action' ), 10, 2 );
+
+        // Custom post row actions for hierarchical post types (treaded like pages by WordPress)
+        add_filter( 'page_row_actions', array( $this, 'add_ignore_row_action' ), 10, 2 );
+
         add_filter( 'bulk_actions-edit-project', array( $this, 'add_ignore_bulk_action' ) );
         add_filter( 'handle_bulk_actions-edit-project', array( $this, 'handle_ignore_bulk_action' ), 10, 3 );
         add_action( 'admin_notices', array( $this, 'ignore_bulk_action_admin_notice' ) );
