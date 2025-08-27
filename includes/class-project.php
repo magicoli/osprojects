@@ -56,6 +56,9 @@ class OSProjectsProject {
         add_action( 'manage_project_posts_custom_column', array( $this, 'render_project_columns' ), 10, 2 );
         add_filter( 'manage_edit-project_sortable_columns', array( $this, 'make_project_columns_sortable' ) );
         add_action( 'pre_get_posts', array( $this, 'handle_project_column_sorting' ) );
+
+        // Change columns orderr
+        add_filter( 'manage_edit-project_columns', array( $this, 'reorder_project_columns' ) );
     }
 
     /**
@@ -132,8 +135,9 @@ class OSProjectsProject {
         );
 
         register_taxonomy( 'project_category', 'project', $args );
-    // Ensure the built-in post_tag taxonomy is available for projects
-    register_taxonomy_for_object_type( 'post_tag', 'project' );
+        
+        // Ensure the built-in post_tag taxonomy is available for projects
+        register_taxonomy_for_object_type( 'post_tag', 'project' );
     }
 
     /**
@@ -579,6 +583,23 @@ class OSProjectsProject {
         }
 
         echo '</select>';
+    }
+
+    /**
+     * Reorder project columns to place 'Tags' after 'Project Category'
+     */
+    public function reorder_project_columns( $columns ) {
+        $new_columns = array();
+        foreach ( $columns as $key => $title ) {
+            $new_columns[$key] = $title;
+            if ( $key === 'taxonomy-project_category' ) {
+                unset( $new_columns['tags'] ); // Temporarily remove to reinsert later
+                // Insert 'Tags' column right after 'Project Category'
+                $new_columns['tags'] = $columns['tags'];
+            }
+        }
+
+        return $new_columns;
     }
 
     /**
