@@ -43,6 +43,9 @@ class OSProjectsProject {
         // Register taxonomy
         add_action( 'init', array( $this, 'register_taxonomy' ) );
 
+        // Register custom post status
+        add_action( 'init', array( $this, 'register_custom_post_status' ) );
+
         // Add set_active_submenu action
         add_action( 'admin_head', array( $this, 'set_active_submenu' ) );
 
@@ -59,6 +62,15 @@ class OSProjectsProject {
 
         // Change columns orderr
         add_filter( 'manage_edit-project_columns', array( $this, 'reorder_project_columns' ) );
+
+        // Add custom post status actions
+        add_filter( 'post_row_actions', array( $this, 'add_ignore_row_action' ), 10, 2 );
+        add_filter( 'bulk_actions-edit-project', array( $this, 'add_ignore_bulk_action' ) );
+        add_filter( 'handle_bulk_actions-edit-project', array( $this, 'handle_ignore_bulk_action' ), 10, 3 );
+        add_action( 'admin_notices', array( $this, 'ignore_bulk_action_admin_notice' ) );
+
+        // Handle individual ignore/unignore actions
+        add_action( 'admin_init', array( $this, 'handle_ignore_actions' ) );
     }
 
     /**
@@ -138,6 +150,21 @@ class OSProjectsProject {
         
         // Ensure the built-in post_tag taxonomy is available for projects
         register_taxonomy_for_object_type( 'post_tag', 'project' );
+    }
+
+    /**
+     * Register custom post status for ignored projects
+     */
+    public function register_custom_post_status() {
+        register_post_status( 'ignored', array(
+            'label'                     => _x( 'Ignored', 'post status', 'osprojects' ),
+            'public'                    => false,
+            'internal'                  => true,
+            'publicly_queryable'        => false,
+            'show_in_admin_all_list'    => false,
+            'show_in_admin_status_list' => true,
+            'label_count'               => _n_noop( 'Ignored <span class="count">(%s)</span>', 'Ignored <span class="count">(%s)</span>', 'osprojects' ),
+        ) );
     }
 
     /**
@@ -753,6 +780,144 @@ class OSProjectsProject {
         }
 
         return false;
+    }
+
+    /**
+     * Add "Ignore" action to post row actions
+     */
+    public function add_ignore_row_action( $actions, $post ) {
+        if ( $post->post_type === 'project' ) {
+            if ( $post->post_status === 'ignored' ) {
+                // Add "Unignore" action for ignored posts - preserve current query args
+                $unignore_url = add_query_arg( array(
+                    'action' => 'unignore',
+                    'post'   => $post->ID,
+                ), $_SERVER['REQUEST_URI'] );
+                
+                $actions['unignore'] = sprintf(
+                    '<a href="%s" aria-label="%s">%s</a>',
+                    wp_nonce_url( $unignore_url, 'unignore_post_' . $post->ID ),
+                    esc_attr( sprintf( __( 'Unignore "%s"', 'osprojects' ), $post->post_title ) ),
+                    __( 'Unignore', 'osprojects' )
+                );
+            } elseif ( $post->post_status !== 'trash' ) {
+                // Add "Ignore" action for non-ignored, non-trashed posts - preserve current query args
+                $ignore_url = add_query_arg( array(
+                    'action' => 'ignore',
+                    'post'   => $post->ID,
+                ), $_SERVER['REQUEST_URI'] );
+                
+                $actions['ignore'] = sprintf(
+                    '<a href="%s" aria-label="%s">%s</a>',
+                    wp_nonce_url( $ignore_url, 'ignore_post_' . $post->ID ),
+                    esc_attr( sprintf( __( 'Ignore "%s"', 'osprojects' ), $post->post_title ) ),
+                    __( 'Ignore', 'osprojects' )
+                );
+            }
+        }
+        return $actions;
+    }
+
+    /**
+     * Add "Ignore" to bulk actions
+     */
+    public function add_ignore_bulk_action( $bulk_actions ) {
+        $bulk_actions['ignore'] = __( 'Ignore', 'osprojects' );
+        return $bulk_actions;
+    }
+
+    /**
+     * Handle bulk ignore action
+     */
+    public function handle_ignore_bulk_action( $redirect_to, $action, $post_ids ) {
+        if ( $action !== 'ignore' ) {
+            return $redirect_to;
+        }
+
+        $ignored_count = 0;
+        foreach ( $post_ids as $post_id ) {
+            if ( get_post_type( $post_id ) === 'project' ) {
+                wp_update_post( array(
+                    'ID'          => $post_id,
+                    'post_status' => 'ignored',
+                ) );
+                $ignored_count++;
+            }
+        }
+
+        $redirect_to = add_query_arg( 'ignored', $ignored_count, $redirect_to );
+        return $redirect_to;
+    }
+
+    /**
+     * Display admin notice for bulk ignore action
+     */
+    public function ignore_bulk_action_admin_notice() {
+        if ( ! empty( $_REQUEST['ignored'] ) ) {
+            $ignored_count = intval( $_REQUEST['ignored'] );
+            printf(
+                '<div id="message" class="updated notice is-dismissible"><p>' .
+                _n( '%d project ignored.', '%d projects ignored.', $ignored_count, 'osprojects' ) .
+                '</p></div>',
+                $ignored_count
+            );
+        }
+
+        if ( ! empty( $_REQUEST['unignored'] ) ) {
+            printf(
+                '<div id="message" class="updated notice is-dismissible"><p>%s</p></div>',
+                __( 'Project unignored.', 'osprojects' )
+            );
+        }
+    }
+
+    /**
+     * Handle individual ignore/unignore actions
+     */
+    public function handle_ignore_actions() {
+        if ( ! isset( $_GET['action'] ) || ! isset( $_GET['post'] ) ) {
+            return;
+        }
+
+        $action = $_GET['action'];
+        $post_id = intval( $_GET['post'] );
+
+        if ( ! in_array( $action, array( 'ignore', 'unignore' ) ) || get_post_type( $post_id ) !== 'project' ) {
+            return;
+        }
+
+        // Verify nonce
+        $nonce_action = $action . '_post_' . $post_id;
+        if ( ! wp_verify_nonce( $_GET['_wpnonce'], $nonce_action ) ) {
+            wp_die( __( 'Security check failed.', 'osprojects' ) );
+        }
+
+        // Check user permissions
+        if ( ! current_user_can( 'edit_post', $post_id ) ) {
+            wp_die( __( 'You do not have permission to perform this action.', 'osprojects' ) );
+        }
+
+        // Preserve current query parameters using WordPress functions
+        // Remove only our specific action parameters, keep everything else
+        $redirect_url = remove_query_arg( array( 'action', 'post', '_wpnonce', 'ignored', 'unignored' ) );
+
+        // Perform the action
+        if ( $action === 'ignore' ) {
+            wp_update_post( array(
+                'ID'          => $post_id,
+                'post_status' => 'ignored',
+            ) );
+            $redirect_url = add_query_arg( 'ignored', '1', $redirect_url );
+        } else { // unignore
+            wp_update_post( array(
+                'ID'          => $post_id,
+                'post_status' => 'publish',
+            ) );
+            $redirect_url = add_query_arg( 'unignored', '1', $redirect_url );
+        }
+
+        wp_redirect( $redirect_url );
+        exit;
     }
 
     public static function get_repo_project_id( $repo_url ) {
