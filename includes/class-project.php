@@ -45,6 +45,11 @@ class OSProjectsProject {
 
         // Add set_active_submenu action
         add_action( 'admin_head', array( $this, 'set_active_submenu' ) );
+
+        // Add filter dropdown for project category
+        add_action( 'restrict_manage_posts', array( $this, 'add_project_category_filter' ) );
+        add_filter( 'request', array( $this, 'filter_projects_by_category_request' ) );
+        add_action( 'pre_get_posts', array( $this, 'filter_projects_by_category' ) );
     }
 
     /**
@@ -463,7 +468,7 @@ class OSProjectsProject {
      * AJAX handler to fetch Git data
      */
     public function ajax_fetch_git_data() {
-        // Verify nonce with updated action name
+        // Verify nonce with updated action
         if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'osprojects_fetch_git_data' ) ) { // Updated nonce action
             wp_send_json_error( 'Invalid nonce.' );
         }
@@ -531,6 +536,112 @@ class OSProjectsProject {
             $parent_file = 'osprojects';
             $submenu_file = 'edit-tags.php?taxonomy=project_category&post_type=project';
         }
+    }
+
+    /**
+     * Add a filter dropdown for project category in the admin list
+     */
+    public function add_project_category_filter() {
+        global $typenow;
+
+        if ( $typenow !== 'project' ) {
+            return;
+        }
+
+        $taxonomy = 'project_category';
+        $selected = isset( $_GET[$taxonomy] ) ? $_GET[$taxonomy] : '';
+
+        // Add "Uncategorized" option
+        echo '<select name="' . esc_attr( $taxonomy ) . '" id="' . esc_attr( $taxonomy ) . '">';
+        echo '<option value="">' . __( 'All Categories', 'osprojects' ) . '</option>';
+        echo '<option value="__uncategorized__" ' . selected( $selected, '__uncategorized__', false ) . '>' . __( 'Uncategorized', 'osprojects' ) . '</option>';
+
+        $categories = get_terms( array(
+            'taxonomy'   => $taxonomy,
+            'orderby'    => 'name',
+            'hide_empty' => false,
+        ) );
+
+        if ( ! empty( $categories ) && ! is_wp_error( $categories ) ) {
+            foreach ( $categories as $category ) {
+                $indent = '';
+                if ( $category->parent > 0 ) {
+                    $indent = '&nbsp;&nbsp;';
+                }
+                echo '<option value="' . esc_attr( $category->slug ) . '" ' . selected( $selected, $category->slug, false ) . '>' . $indent . esc_html( $category->name ) . ' (' . $category->count . ')</option>';
+            }
+        }
+
+        echo '</select>';
+    }
+
+    /**
+     * Filter projects by category in the admin list
+     */
+    public function filter_projects_by_category( $query ) {
+        // Only modify the main query for the project post type in admin
+        if ( ! is_admin() || ! $query->is_main_query() || $query->get( 'post_type' ) !== 'project' ) {
+            return;
+        }
+
+        // The request filter should have already handled the __uncategorized__ case
+        // This is just a fallback for regular category filtering
+        $taxonomy = 'project_category';
+        if ( isset( $_GET[$taxonomy] ) && $_GET[$taxonomy] !== '' && $_GET[$taxonomy] !== '__uncategorized__' ) {
+            $selected = $_GET[$taxonomy];
+            
+            // Show posts in selected category (regular case)
+            $tax_query = array(
+                array(
+                    'taxonomy' => $taxonomy,
+                    'field'    => 'slug',
+                    'terms'    => $selected,
+                ),
+            );
+
+            $query->set( 'tax_query', $tax_query );
+        }
+    }
+
+    /**
+     * Filter projects by category using request filter - intercept early
+     */
+    public function filter_projects_by_category_request( $query_vars ) {
+        global $typenow;
+        
+        // Only modify for project post type in admin
+        if ( ! is_admin() || $typenow !== 'project' ) {
+            return $query_vars;
+        }
+
+        $taxonomy = 'project_category';
+        
+        // Check if we have our special uncategorized value
+        if ( isset( $_GET[$taxonomy] ) && $_GET[$taxonomy] === '__uncategorized__' ) {
+            // Remove the taxonomy parameter to prevent WordPress from processing it
+            unset( $query_vars[$taxonomy] );
+            
+            // Get all term IDs from the taxonomy
+            $terms = get_terms( array(
+                'taxonomy' => $taxonomy,
+                'fields'   => 'ids',
+                'hide_empty' => false,
+            ) );
+            
+            if ( ! empty( $terms ) && ! is_wp_error( $terms ) ) {
+                // Set up tax_query with NOT IN
+                $query_vars['tax_query'] = array(
+                    array(
+                        'taxonomy' => $taxonomy,
+                        'field'    => 'term_id',
+                        'terms'    => $terms,
+                        'operator' => 'NOT IN',
+                    ),
+                );
+            }
+        }
+
+        return $query_vars;
     }
 
     public static function get_repo_project_id( $repo_url ) {
