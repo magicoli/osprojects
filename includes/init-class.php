@@ -36,7 +36,7 @@ class OSProjects {
             'manage_options',
             'osprojects',
             array( $this, 'dashboard' ),
-            'dashicons-admin-generic',
+            'dashicons-editor-code',
             6
         );
 
