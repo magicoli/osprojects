@@ -166,17 +166,28 @@ class OSProjectsAdminImport {
                             }
                             if ( isset( $OSProjectsProject ) && method_exists( $OSProjectsProject, 'update_project_meta_fields' ) ) {
                                 $OSProjectsProject->update_project_meta_fields( $project_id, $meta_data );
+                                
+                                // Check if the project was set to ignored status during update (due to git errors)
+                                $post_status = get_post_status( $project_id );
+                                $git_error = get_post_meta( $project_id, 'osp_project_git_error', true );
+                                
+                                if ( $post_status === 'ignored' && !empty( $git_error ) ) {
+                                    // Project was set to ignored due to repository issues
+                                    $error_messages[] = sprintf( __( '%s - Repository marked as ignored: %s', 'osprojects' ), esc_html( $repo_url ), esc_html( $git_error ) )
+                                        . ' ' . OSProjectsProject::project_action_link( $project_id, 'edit', '_blank' );
+                                    $error_count++;
+                                } else {
+                                    // Generate View and Edit links for successful import
+                                    $success_messages[] = sprintf( __( '%s imported successfully.', 'osprojects' ), esc_html( $repo_url ) )
+                                        . ' ' . OSProjectsProject::project_action_link( $project_id, 'view', '_blank' )
+                                        . ' | ' . OSProjectsProject::project_action_link( $project_id, 'edit', '_blank' );
+                                    $imported_count++;
+                                }
                             } else {
                                 $error_messages[] = $repo_url . ' - Project class instance not available.';
                                 $error_count++;
                                 continue;
                             }
-
-                            // Generate View and Edit links
-                            $success_messages[] = sprintf( __( '%s imported successfully.', 'osprojects' ), esc_html( $repo_url ) )
-                                . ' ' . OSProjectsProject::project_action_link( $project_id, 'view', '_blank' )
-                                . ' | ' . OSProjectsProject::project_action_link( $project_id, 'edit', '_blank' );
-                            $imported_count++;
                         } else {
                             $error_messages[] = $repo_url . ' - Failed to set repository URL.';
                             $error_count++;
@@ -313,8 +324,8 @@ class OSProjectsAdminImport {
                     <tbody>
                         <?php foreach ( $repositories as $repo ) :
                             $repo_url = $repo['html_url'];
-                            // Check if the repository is already imported
-                            $project_id = OSProjectsProject::get_repo_project_id( $repo_url );
+                            // Check if the repository is already imported (check both original URL and any redirect target)
+                            $project_id = $this->get_existing_project_for_repo( $repo_url );
                             ?>
                             <tr>
                                 <th scope="row" class="check-column">
@@ -389,6 +400,43 @@ class OSProjectsAdminImport {
         }
 
         return $existing_repos;
+    }
+
+    /**
+     * Check if a repository URL (or its redirect target) already exists as a project
+     * 
+     * @param string $repo_url Repository URL to check
+     * @return int|false Project ID if exists, false otherwise
+     */
+    private function get_existing_project_for_repo( $repo_url ) {
+        // First check the original URL
+        $project_id = OSProjectsProject::get_repo_project_id( $repo_url );
+        if ( $project_id ) {
+            return $project_id;
+        }
+
+        // Also check if there's a redirect target that already exists
+        // This ensures moved repositories show as "already imported" in the list
+        if ( class_exists( 'OSProjectsProject' ) ) {
+            $instance = new OSProjectsProject();
+            if ( method_exists( $instance, 'resolve_repository_redirects' ) ) {
+                $redirect_result = $instance->resolve_repository_redirects( $repo_url );
+                
+                // If there's a redirect and no error, check the final URL
+                if ( isset( $redirect_result['redirected'] ) && $redirect_result['redirected'] && 
+                     empty( $redirect_result['error'] ) && isset( $redirect_result['url'] ) ) {
+                    $final_url = $redirect_result['url'];
+                    if ( $final_url !== $repo_url ) {
+                        $project_id = OSProjectsProject::get_repo_project_id( $final_url );
+                        if ( $project_id ) {
+                            return $project_id;
+                        }
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     /**

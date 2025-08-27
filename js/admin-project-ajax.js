@@ -59,6 +59,13 @@ jQuery(document).ready(function($) {
                 success: function(response) {
                     if (response.success) {
                         $('#osp_project_repository_notification').html('<span class="spinner"></span> Loading...');
+                        
+                        // Handle repository redirects
+                        if (response.data.final_repository_url && response.data.final_repository_url !== $('#osp_project_repository').val()) {
+                            $('#osp_project_repository').val(response.data.final_repository_url);
+                            $('#osp_project_repository_notification').html('Repository URL updated due to redirect' + (response.data.redirect_info || '') + '.');
+                        }
+                        
                         // Check if last_commit_html exists to validate the repository
                         if (response.data.last_commit_html) {
                             // Update the UI with the new data

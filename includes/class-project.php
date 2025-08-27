@@ -270,6 +270,44 @@ class OSProjectsProject {
                     break;
                 case 'osp_project_repository':
                     $repository_url = sanitize_text_field( $value );
+                    
+                    // Check for repository redirects and accessibility
+                    $redirect_result = $this->resolve_repository_redirects( $repository_url );
+                    
+                    // Handle errors (404, network issues, etc.)
+                    if ( ! empty( $redirect_result['error'] ) ) {
+                        error_log(__METHOD__ . " DEBUG $repository_url redirects " . print_r( $redirect_result, true ) );
+                        // Set project to ignored status
+                        wp_update_post( array(
+                            'ID'          => $post_id,
+                            'post_status' => 'ignored',
+                        ) );
+                        update_post_meta( $post_id, 'osp_project_git_error', $redirect_result['error'] );
+                        update_post_meta( $post_id, $key, $repository_url ); // Keep original URL for reference
+                        break; // Don't attempt git operations
+                    }
+                    
+                    $final_url = $redirect_result['url'];
+                    
+                    // Handle redirects
+                    if ( $redirect_result['redirected'] && $final_url !== $repository_url ) {
+                        // Check if the redirect target is already used by another project
+                        $existing_project_id = self::get_repo_project_id( $final_url );
+                        if ( $existing_project_id !== false && $existing_project_id != $post_id ) {
+                            // Another project already uses this URL, set current project to ignored
+                            wp_update_post( array(
+                                'ID'          => $post_id,
+                                'post_status' => 'ignored',
+                            ) );
+                            update_post_meta( $post_id, 'osp_project_git_error', 'Repository redirects to URL already used by another project.' );
+                            update_post_meta( $post_id, $key, $repository_url ); // Keep original URL
+                            break; // Don't attempt git operations
+                        }
+                        
+                        // Update to the redirect target URL
+                        $repository_url = $final_url;
+                    }
+                    
                     update_post_meta( $post_id, $key, $repository_url );
 
                     // Instantiate OSProjectsGit with the repository URL
@@ -277,56 +315,72 @@ class OSProjectsProject {
 
                     // Check if the repository was cloned successfully
                     if ( $git->is_repository_cloned() ) {
-                        // Fetch data using OSProjectsGit methods
-                        $license = $git->license();
-                        $version = $git->version();
-                        $release_date = $git->release_date();
-                        $last_release_html = $git->last_release_html();
-                        $last_commit_html = $git->last_commit_html();
+                        try {
+                            // Clear any previous git errors
+                            delete_post_meta( $post_id, 'osp_project_git_error' );
+                            
+                            // Fetch data using OSProjectsGit methods
+                            $license = $git->license();
+                            $version = $git->version();
+                            $release_date = $git->release_date();
+                            $last_release_html = $git->last_release_html();
+                            $last_commit_html = $git->last_commit_html();
 
-                        // Save fetched data as post meta
-                        update_post_meta( $post_id, 'osp_project_license', sanitize_text_field( $license ) );
-                        update_post_meta( $post_id, 'osp_project_stable_release_version', sanitize_text_field( $version ) );
-                        update_post_meta( $post_id, 'osp_project_last_release_html', wp_kses_post( $last_release_html ) );
-                        update_post_meta( $post_id, 'osp_project_last_commit_html', wp_kses_post( $last_commit_html ) );
+                            // Save fetched data as post meta
+                            update_post_meta( $post_id, 'osp_project_license', sanitize_text_field( $license ) );
+                            update_post_meta( $post_id, 'osp_project_stable_release_version', sanitize_text_field( $version ) );
+                            update_post_meta( $post_id, 'osp_project_last_release_html', wp_kses_post( $last_release_html ) );
+                            update_post_meta( $post_id, 'osp_project_last_commit_html', wp_kses_post( $last_commit_html ) );
 
-                        // Set post title if available
-                        $project_title = $git->get_project_title();
-                        if ( $project_title ) {
-                            wp_update_post( array(
-                                'ID'         => $post_id,
-                                'post_title' => sanitize_text_field( $project_title ),
-                            ) );
-                        }
-
-                        // Set post content if available
-                        $project_description = $git->get_project_description();
-                        if ( $project_description ) {
-                            $post_content = self::text_to_blocks( $project_description );
-                            wp_update_post( array(
-                                'ID'           => $post_id,
-                                'post_content' => $post_content,
-                            ) );
-                        }
-
-                        // Collect tags from package metadata and assign as post tags.
-                        $project_tags = array();
-                        if ( method_exists( $git, 'get_project_tags' ) ) {
-                            $project_tags = $git->get_project_tags();
-                        } else {
-                            $project_type = $git->get_project_type();
-                            if ( $project_type ) {
-                                $project_tags[] = $project_type;
+                            // Set post title if available
+                            $project_title = $git->get_project_title();
+                            if ( $project_title ) {
+                                wp_update_post( array(
+                                    'ID'         => $post_id,
+                                    'post_title' => sanitize_text_field( $project_title ),
+                                ) );
                             }
-                        }
 
-                        if ( ! empty( $project_tags ) ) {
-                            // Assign as post tags (post_tag taxonomy)
-                            wp_set_post_terms( $post_id, $project_tags, 'post_tag', false );
+                            // Set post content if available
+                            $project_description = $git->get_project_description();
+                            if ( $project_description ) {
+                                $post_content = self::text_to_blocks( $project_description );
+                                wp_update_post( array(
+                                    'ID'           => $post_id,
+                                    'post_content' => $post_content,
+                                ) );
+                            }
+
+                            // Collect tags from package metadata and assign as post tags.
+                            $project_tags = array();
+                            if ( method_exists( $git, 'get_project_tags' ) ) {
+                                $project_tags = $git->get_project_tags();
+                            } else {
+                                $project_type = $git->get_project_type();
+                                if ( $project_type ) {
+                                    $project_tags[] = $project_type;
+                                }
+                            }
+
+                            if ( ! empty( $project_tags ) ) {
+                                // Assign as post tags (post_tag taxonomy)
+                                wp_set_post_terms( $post_id, $project_tags, 'post_tag', false );
+                            }
+                        } catch ( Exception $e ) {
+                            // Git operations failed (empty repository, no commits, etc.) - set project to ignored status
+                            wp_update_post( array(
+                                'ID'          => $post_id,
+                                'post_status' => 'ignored',
+                            ) );
+                            update_post_meta( $post_id, 'osp_project_git_error', 'Git operations failed: ' . $e->getMessage() );
                         }
                     } else {
-                        // Handle cloning failure
-                        update_post_meta( $post_id, 'osp_project_git_error', 'Failed to clone repository.' );
+                        // Repository is unreachable or empty - set project to ignored status
+                        wp_update_post( array(
+                            'ID'          => $post_id,
+                            'post_status' => 'ignored',
+                        ) );
+                        update_post_meta( $post_id, 'osp_project_git_error', 'Repository is empty or unreachable.' );
                     }
                     break;
                 case 'osp_project_license':
@@ -526,45 +580,70 @@ class OSProjectsProject {
             wp_send_json_error( 'Invalid Repository URL.' );
         }
 
-        // Instantiate OSProjectsGit with the repository URL
+        // Check for repository redirects and accessibility
+        $redirect_result = $this->resolve_repository_redirects( $repository_url );
+        
+        // Handle errors (404, network issues, etc.)
+        if ( ! empty( $redirect_result['error'] ) ) {
+            error_log(__METHOD__ . " DEBUG $repository_url redirects " . print_r( $redirect_result, true ) );
+            wp_send_json_error( $redirect_result['error'] );
+        }
+        
+        $final_url = $redirect_result['url'];
+        $redirect_info = '';
+        
+        // Handle redirects
+        if ( $redirect_result['redirected'] && $final_url !== $repository_url ) {
+            $redirect_info = ' (redirected from ' . $repository_url . ')';
+            $repository_url = $final_url;
+        }
+
+        // Instantiate OSProjectsGit with the final repository URL
         $git = new OSProjectsGit( $repository_url );
 
         // Check if the repository was cloned successfully
         if ( !$git->is_repository_cloned() ) {
-            wp_send_json_error( 'Failed to clone repository.' );
+            wp_send_json_error( 'Repository is empty or unreachable.' . $redirect_info );
         }
 
-        // Fetch data using OSProjectsGit methods
-        $license = $git->license();
-        $version = $git->version();
-        $release_date = $git->release_date();
-        $last_release_html = $git->last_release_html();
-        $last_commit_html = $git->last_commit_html();
+        try {
+            // Fetch data using OSProjectsGit methods
+            $license = $git->license();
+            $version = $git->version();
+            $release_date = $git->release_date();
+            $last_release_html = $git->last_release_html();
+            $last_commit_html = $git->last_commit_html();
 
-        // Add project title, description, and type
-        $project_title = $git->get_project_title();
-        $project_description = self::text_to_blocks($git->get_project_description());
-        $project_type = $git->get_project_type();
-        $project_tags = array();
-        if ( method_exists( $git, 'get_project_tags' ) ) {
-            $project_tags = $git->get_project_tags();
-        } elseif ( $project_type ) {
-            $project_tags[] = $project_type;
+            // Add project title, description, and type
+            $project_title = $git->get_project_title();
+            $project_description = self::text_to_blocks($git->get_project_description());
+            $project_type = $git->get_project_type();
+            $project_tags = array();
+            if ( method_exists( $git, 'get_project_tags' ) ) {
+                $project_tags = $git->get_project_tags();
+            } elseif ( $project_type ) {
+                $project_tags[] = $project_type;
+            }
+            
+            // Prepare the response data
+            $data = array(
+                'license'                  => $license,
+                'version'                  => $version,
+                'release_date'             => $release_date,
+                'last_release_html'        => $last_release_html,
+                'last_commit_html'         => $last_commit_html,
+                'project_title'            => $project_title,
+                'project_description'      => $project_description,
+                'project_type'             => $project_type,
+                'project_tags'             => $project_tags,
+                'final_repository_url'     => $repository_url, // Include final URL in case of redirects
+                'redirect_info'            => $redirect_info,
+            );
+
+            wp_send_json_success( $data );
+        } catch ( Exception $e ) {
+            wp_send_json_error( 'Git operations failed: ' . $e->getMessage() . $redirect_info );
         }
-        // Prepare the response data
-        $data = array(
-            'license'                  => $license,
-            'version'                  => $version,
-            'release_date'             => $release_date,
-            'last_release_html'        => $last_release_html,
-            'last_commit_html'         => $last_commit_html,
-            'project_title'            => $project_title,
-            'project_description'      => $project_description,
-            'project_type'             => $project_type,
-            'project_tags'             => $project_tags,
-        );
-
-        wp_send_json_success( $data );
     }
 
     /**
@@ -997,6 +1076,86 @@ class OSProjectsProject {
     }
 
     /**
+     * Resolve repository URL redirects and check accessibility
+     * 
+     * @param string $repo_url Original repository URL
+     * @return array Array with 'url' (final URL), 'error' (error message if any), 'redirected' (boolean)
+     */
+    private function resolve_repository_redirects( $repo_url ) {
+        // Only handle HTTP(S) URLs
+        if ( ! filter_var( $repo_url, FILTER_VALIDATE_URL ) || ! preg_match( '/^https?:\/\//', $repo_url ) ) {
+            return array( 'url' => $repo_url, 'error' => null, 'redirected' => false );
+        }
+
+        // Use WordPress HTTP API to follow redirects
+        $response = wp_remote_head( $repo_url, array(
+            'timeout'     => 10,
+            'redirection' => 5, // Follow up to 5 redirects
+            'user-agent'  => 'OSProjectsPlugin',
+        ) );
+
+        // If request failed, return error
+        if ( is_wp_error( $response ) ) {
+            return array( 
+                'url' => $repo_url, 
+                'error' => 'Network error: ' . $response->get_error_message(), 
+                'redirected' => false 
+            );
+        }
+
+        // Check HTTP status code
+        $status_code = wp_remote_retrieve_response_code( $response );
+        
+        // Handle 4xx errors (client errors like 404, 403, etc.)
+        if ( $status_code >= 400 && $status_code < 500 ) {
+            $error_messages = array(
+                404 => 'Repository not found (404)',
+                403 => 'Access forbidden (403)',
+                401 => 'Unauthorized access (401)',
+            );
+            $error_message = isset( $error_messages[ $status_code ] ) 
+                ? $error_messages[ $status_code ] 
+                : "Client error ($status_code)";
+            
+            return array( 
+                'url' => $repo_url, 
+                'error' => $error_message, 
+                'redirected' => false 
+            );
+        }
+
+        // Handle 5xx errors (server errors)
+        if ( $status_code >= 500 ) {
+            return array( 
+                'url' => $repo_url, 
+                'error' => "Server error ($status_code)", 
+                'redirected' => false 
+            );
+        }
+
+        // Get the final URL after redirects
+        $final_url = wp_remote_retrieve_header( $response, 'location' );
+        
+        // If no location header and status is 2xx, no redirect occurred
+        if ( empty( $final_url ) && $status_code >= 200 && $status_code < 300 ) {
+            return array( 'url' => $repo_url, 'error' => null, 'redirected' => false );
+        }
+
+        // Validate the final URL and ensure it's different from the original
+        if ( ! empty( $final_url ) && filter_var( $final_url, FILTER_VALIDATE_URL ) && $final_url !== $repo_url ) {
+            // Remove trailing .git if present for consistency
+            $final_url = preg_replace( '/\.git$/', '', $final_url );
+            $repo_url_clean = preg_replace( '/\.git$/', '', $repo_url );
+            
+            if ( $final_url !== $repo_url_clean ) {
+                return array( 'url' => $final_url, 'error' => null, 'redirected' => true );
+            }
+        }
+
+        return array( 'url' => $repo_url, 'error' => null, 'redirected' => false );
+    }
+
+    /**
      * Refresh metadata for all projects by re-calling update_project_meta_fields for each post
      * This will update tags, license, releases and other fetched data from the repository.
      */
@@ -1395,7 +1554,7 @@ class OSProjectsProject {
                 '<a href="%s" target="%s">%s</a>',
                 esc_url( $view_link ),
                 esc_attr( $target ),
-                esc_html__( 'View Project', 'osprojects' )
+                $link_text
             );
         }
         return '';
