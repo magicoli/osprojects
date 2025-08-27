@@ -1081,7 +1081,7 @@ class OSProjectsProject {
      * @param string $repo_url Original repository URL
      * @return array Array with 'url' (final URL), 'error' (error message if any), 'redirected' (boolean)
      */
-    private function resolve_repository_redirects( $repo_url ) {
+    public function resolve_repository_redirects( $repo_url ) {
         // Only handle HTTP(S) URLs
         if ( ! filter_var( $repo_url, FILTER_VALIDATE_URL ) || ! preg_match( '/^https?:\/\//', $repo_url ) ) {
             return array( 'url' => $repo_url, 'error' => null, 'redirected' => false );

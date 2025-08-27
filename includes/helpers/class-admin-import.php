@@ -88,15 +88,19 @@ class OSProjectsAdminImport {
             } else {
                 // Step 1: Fetch repositories
                 // $github_user_url = isset( $_REQUEST['github_user_url'] ) ? esc_url_raw( $_REQUEST['github_user_url'] ) : ''; // Ensure the URL is captured
-                $repositories = $this->fetch_github_repositories( $github_user_url );
+                $repository_data = $this->fetch_github_repositories( $github_user_url );
 
-                if ( is_array( $repositories ) && ! isset( $repositories['error'] ) ) {
+                if ( is_array( $repository_data ) && ! isset( $repository_data['error'] ) ) {
+                    // Extract repositories from the structured response
+                    $repositories = isset( $repository_data['repositories'] ) ? $repository_data['repositories'] : $repository_data;
+                    $metadata = isset( $repository_data['repositories'] ) ? $repository_data : null;
                     // Display the form with the list of repositories
-                    $this->display_repository_selection_form( $repositories );
+                    $this->display_repository_selection_form( $repositories, $metadata );
                     return;
                 } else {
                     // Display error message with "Try again" link including the GitHub user URL
-                    echo '<div class="notice notice-error"><p>' . esc_html( $repositories['error'] ) . '</p></div>';
+                    $error_msg = isset( $repository_data['error'] ) ? $repository_data['error'] : 'Unknown error occurred';
+                    echo '<div class="notice notice-error"><p>' . esc_html( $error_msg ) . '</p></div>';
                     echo '<p><a href="' . esc_url( admin_url( 'import.php?import=osprojects-importer&github_user_url=' . urlencode($github_user_url) ) ) . '">' . esc_html__( 'Try again', 'osprojects' ) . '</a></p>'; // Added "Try again" link with URL
                 }
             }
@@ -287,7 +291,7 @@ class OSProjectsAdminImport {
         <?php
     }
 
-    private function display_repository_selection_form( $repositories ) {
+    private function display_repository_selection_form( $repositories, $metadata = null ) {
         // Fetch existing project repository URLs and their corresponding post IDs
         $existing_repos = $this->get_existing_repository_urls();
         $github_user_url = isset($_REQUEST['github_user_url']) ? esc_url_raw($_REQUEST['github_user_url']) : ''; // Retrieve the URL from query parameters
@@ -307,6 +311,25 @@ class OSProjectsAdminImport {
                     )
                 );
                 ?></p>
+                <?php if ( $metadata && isset( $metadata['total_count'] ) ) : ?>
+                <p><strong><?php
+                    echo esc_html( sprintf(
+                        __( 'Found %d repositories', 'osprojects' ),
+                        $metadata['total_count']
+                    ) );
+                ?></strong></p>
+                <?php endif; ?>
+                
+                <?php if ( $metadata && isset( $metadata['limit_reached'] ) && $metadata['limit_reached'] ) : ?>
+                <div class="notice notice-warning">
+                    <p><strong><?php esc_html_e( 'Warning:', 'osprojects' ); ?></strong> 
+                    <?php echo esc_html( sprintf(
+                        __( 'Repository limit reached. Only the first %d repositories are shown. This user may have more repositories that are not displayed.', 'osprojects' ),
+                        $metadata['total_count']
+                    ) ); ?>
+                    </p>
+                </div>
+                <?php endif; ?>
                 <p>
                     <a href="#" id="select-all"><?php esc_html_e( 'Select All', 'osprojects' ); ?></a> |
                     <a href="#" id="select-none"><?php esc_html_e( 'Select None', 'osprojects' ); ?></a> |
@@ -409,33 +432,14 @@ class OSProjectsAdminImport {
      * @return int|false Project ID if exists, false otherwise
      */
     private function get_existing_project_for_repo( $repo_url ) {
-        // First check the original URL
+        // Check the original URL directly
         $project_id = OSProjectsProject::get_repo_project_id( $repo_url );
         if ( $project_id ) {
             return $project_id;
         }
 
-        // Also check if there's a redirect target that already exists
-        // This ensures moved repositories show as "already imported" in the list
-        if ( class_exists( 'OSProjectsProject' ) ) {
-            $instance = new OSProjectsProject();
-            if ( method_exists( $instance, 'resolve_repository_redirects' ) ) {
-                $redirect_result = $instance->resolve_repository_redirects( $repo_url );
-                
-                // If there's a redirect and no error, check the final URL
-                if ( isset( $redirect_result['redirected'] ) && $redirect_result['redirected'] && 
-                     empty( $redirect_result['error'] ) && isset( $redirect_result['url'] ) ) {
-                    $final_url = $redirect_result['url'];
-                    if ( $final_url !== $repo_url ) {
-                        $project_id = OSProjectsProject::get_repo_project_id( $final_url );
-                        if ( $project_id ) {
-                            return $project_id;
-                        }
-                    }
-                }
-            }
-        }
-
+        // Note: Redirect checking will be handled during import via update_project_meta_fields
+        // This keeps the list generation fast and avoids private method access issues
         return false;
     }
 
@@ -457,7 +461,12 @@ class OSProjectsAdminImport {
         }
 
         $username = $path_parts[0];
-        $api_url = "https://api.github.com/users/{$username}/repos";
+        $all_repos = array();
+        $page = 1;
+        $per_page = 100; // GitHub's maximum per_page value
+        $total_fetched = 0;
+        $max_pages = 10; // Limit to 10 pages to handle up to 1000 repositories safely
+        $limit_reached = false;
 
         $args = array(
             'headers' => array(
@@ -472,24 +481,66 @@ class OSProjectsAdminImport {
             $args['headers']['Authorization'] = 'token ' . $github_token;
         }
 
-        $response = wp_remote_get( $api_url, $args );
+        // Fetch all pages of repositories
+        do {
+            // Build URL with query parameters properly
+            $api_url = add_query_arg( array(
+                'per_page' => $per_page,
+                'page' => $page,
+            ), "https://api.github.com/users/{$username}/repos" );
+            
+            $response = wp_remote_get( $api_url, $args );
 
-        if ( is_wp_error( $response ) ) {
-            return array( 'error' => __( 'Unable to fetch repositories.', 'osprojects' ) );
-        }
+            if ( is_wp_error( $response ) ) {
+                return array( 'error' => __( 'Unable to fetch repositories.', 'osprojects' ) );
+            }
 
-        $status_code = wp_remote_retrieve_response_code( $response );
-        if ( 200 !== $status_code ) {
-            return array( 'error' => __( 'GitHub API returned an error.', 'osprojects' ) );
-        }
+            $status_code = wp_remote_retrieve_response_code( $response );
+            if ( 200 !== $status_code ) {
+                return array( 'error' => __( 'GitHub API returned an error.', 'osprojects' ) );
+            }
 
-        $body = wp_remote_retrieve_body( $response );
-        $repos = json_decode( $body, true );
+            $body = wp_remote_retrieve_body( $response );
+            $repos = json_decode( $body, true );
 
-        if ( empty( $repos ) ) {
+            if ( empty( $repos ) ) {
+                break; // No more repositories
+            }
+
+            $all_repos = array_merge( $all_repos, $repos );
+            $total_fetched += count( $repos );
+            
+            // Check for next page using GitHub's link header (recommended approach)
+            $headers = wp_remote_retrieve_headers( $response );
+            $link_header = isset( $headers['link'] ) ? $headers['link'] : '';
+            $has_next_page = false;
+            
+            if ( $link_header ) {
+                // Parse link header to check if there's a "next" page
+                $has_next_page = strpos( $link_header, 'rel="next"' ) !== false;
+            }
+            
+            $page++;
+
+            // Safety check to prevent infinite loops and handle very large repository lists
+            if ( $page > $max_pages ) {
+                $limit_reached = true;
+                break;
+            }
+
+        } while ( $has_next_page );
+
+        if ( empty( $all_repos ) ) {
             return array( 'error' => __( 'No repositories found for this user.', 'osprojects' ) );
         }
 
-        return $repos;
+        // Add metadata about the fetch
+        return array(
+            'repositories' => $all_repos,
+            'total_count' => $total_fetched,
+            'pages_fetched' => $page - 1,
+            'limit_reached' => $limit_reached,
+            'max_pages' => $max_pages
+        );
     }
 }
