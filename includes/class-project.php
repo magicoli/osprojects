@@ -600,16 +600,68 @@ class OSProjectsProject {
         ) );
 
         if ( ! empty( $categories ) && ! is_wp_error( $categories ) ) {
-            foreach ( $categories as $category ) {
-                $indent = '';
-                if ( $category->parent > 0 ) {
-                    $indent = '&nbsp;&nbsp;';
-                }
+            // Sort categories hierarchically
+            $hierarchical_categories = $this->sort_categories_hierarchically( $categories );
+            
+            foreach ( $hierarchical_categories as $category ) {
+                $indent = str_repeat( '&nbsp;&nbsp;', $category->level );
                 echo '<option value="' . esc_attr( $category->slug ) . '" ' . selected( $selected, $category->slug, false ) . '>' . $indent . esc_html( $category->name ) . ' (' . $category->count . ')</option>';
             }
         }
 
         echo '</select>';
+    }
+
+    /**
+     * Sort categories hierarchically for display
+     */
+    private function sort_categories_hierarchically( $categories ) {
+        $sorted = array();
+        $children = array();
+        
+        // Group children by parent
+        foreach ( $categories as $category ) {
+            if ( $category->parent == 0 ) {
+                $category->level = 0;
+                $sorted[] = $category;
+            } else {
+                $children[$category->parent][] = $category;
+            }
+        }
+        
+        // Sort top-level categories by name
+        usort( $sorted, function( $a, $b ) {
+            return strcmp( $a->name, $b->name );
+        } );
+        
+        // Add children recursively
+        $result = array();
+        foreach ( $sorted as $parent ) {
+            $result[] = $parent;
+            $this->add_category_children( $result, $children, $parent->term_id, 1 );
+        }
+        
+        return $result;
+    }
+    
+    /**
+     * Recursively add category children
+     */
+    private function add_category_children( &$result, $children, $parent_id, $level ) {
+        if ( ! isset( $children[$parent_id] ) ) {
+            return;
+        }
+        
+        // Sort children by name
+        usort( $children[$parent_id], function( $a, $b ) {
+            return strcmp( $a->name, $b->name );
+        } );
+        
+        foreach ( $children[$parent_id] as $child ) {
+            $child->level = $level;
+            $result[] = $child;
+            $this->add_category_children( $result, $children, $child->term_id, $level + 1 );
+        }
     }
 
     /**
