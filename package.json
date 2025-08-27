@@ -1,0 +1,42 @@
+{
+    "name": "grunt-wp-plugin-tasks",
+    "type": "wordpress-library",
+    "version": "1.0.0",
+    "scripts": {
+        "build": "wp-scripts build && grunt i18n",
+        "start": "wp-scripts start && grunt i18n",
+        "format": "wp-scripts format",
+        "lint:css": "wp-scripts lint-style",
+        "lint:js": "wp-scripts lint-js",
+        "packages-update": "wp-scripts packages-update",
+        "plugin-zip": "wp-scripts plugin-zip",
+        "grunt": "grunt default",
+        "readme": "grunt makereadmetxt",
+        "i18n": "grunt i18n"
+    },
+    "devDependencies": {
+        "@wordpress/scripts": "^30.18.0",
+        "copy-webpack-plugin": "^11.0.0",
+        "css-loader": "^7.1.2",
+        "gpt-po": "^1.2.1",
+        "grunt": "^1.6.1",
+        "grunt-contrib-clean": "^2.0.0",
+        "grunt-contrib-concat": "^2.1.0",
+        "grunt-contrib-copy": "^1.0.0",
+        "grunt-text-replace": "^0.4.0",
+        "grunt-wp-i18n": "^1.0.3",
+        "grunt-wp-readme-to-markdown": "^2.1.0",
+        "mini-css-extract-plugin": "^2.7.5",
+        "react-refresh": "^0.14.0",
+        "sass": "^1.63.0",
+        "sass-loader": "^16.0.4",
+        "style-loader": "^3.3.4",
+        "webpack-cli": "^5.1.4"
+    },
+    "engines": {
+        "node": ">=14.0.0"
+    },
+    "directories": {
+        "test": "tests"
+    }
+}
