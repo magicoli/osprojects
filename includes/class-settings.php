@@ -42,6 +42,35 @@ class OSProjectsSettings {
             $options['enable_gutenberg'] = self::DEFAULT_enable_gutenberg;
             update_option( 'osprojects-settings', $options );
         }
+
+        // Schedule daily project refresh if not scheduled
+        if ( ! wp_next_scheduled( 'osprojects_daily_project_refresh' ) ) {
+            wp_schedule_event( time(), 'daily', 'osprojects_daily_project_refresh' );
+        }
+
+    // Hook the refresh action
+    add_action( 'osprojects_daily_project_refresh', array( $this, 'handle_scheduled_refresh' ) );
+
+    // Handle manual refresh via admin-post (streaming page)
+    add_action( 'admin_post_osprojects_manual_refresh', array( $this, 'handle_manual_refresh' ) );
+    }
+
+    public function handle_scheduled_refresh() {
+        if ( class_exists( 'OSProjectsProject' ) && method_exists( 'OSProjectsProject', 'refresh_all_projects' ) ) {
+            OSProjectsProject::refresh_all_projects();
+        }
+    }
+
+    public function handle_manual_refresh() {
+        if ( ! current_user_can( 'manage_options' ) ) {
+            wp_die( __( 'Insufficient permissions', 'osprojects' ) );
+        }
+
+        check_admin_referer( 'osprojects_manual_refresh' );
+
+        // Render streaming progress page directly
+        require_once OSPROJECTS_PLUGIN_PATH . 'templates/refresh-streaming.php';
+        exit;
     }
 
     public function register_settings() {
@@ -49,7 +78,7 @@ class OSProjectsSettings {
 
         add_settings_section(
             'osprojects-settings-section',
-            __( 'OSProjects Settings', 'osprojects' ),
+            '', // __( 'OSProjects Settings', 'osprojects' ),
             null,
             'osprojects-settings'
         );

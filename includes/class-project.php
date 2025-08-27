@@ -620,9 +620,14 @@ class OSProjectsProject {
             'processed'   => 0,
             'failed'      => 0,
             'failed_items'=> array(),
+            'processed_items' => array(),
             'started'     => time(),
             'finished'    => 0,
             'batch_size'  => $batch_size,
+            // Status lifecycle: preparing -> processing -> finished
+            'status'      => 'preparing',
+            'current_project' => null,
+            'status_text' => 'Loading projects',
         ) );
 
         // Mark as running
@@ -637,6 +642,13 @@ class OSProjectsProject {
         if ( empty( $queue ) ) {
             $progress = get_option( 'osprojects_refresh_progress', array() );
             $progress['finished'] = time();
+            // Ensure current project is cleared when nothing is queued
+            $progress['current_project'] = null;
+            $progress['status'] = 'finished';
+            $processed = isset( $progress['processed'] ) ? (int) $progress['processed'] : 0;
+            $total = isset( $progress['total'] ) ? (int) $progress['total'] : 0;
+            $failed = isset( $progress['failed'] ) ? (int) $progress['failed'] : 0;
+            $progress['status_text'] = sprintf( 'Processing completed - %d / %d processed, %d failed', $processed, $total, $failed );
             update_option( 'osprojects_refresh_progress', $progress );
             // Clear running flag
             update_option( 'osprojects_refresh_running', false );
@@ -650,15 +662,57 @@ class OSProjectsProject {
         }
 
         $batch = array_splice( $queue, 0, $batch_size );
-    $processed = 0;
-    $failed = 0;
-    $failed_items = array();
+        $processed = 0;
+        $failed = 0;
+        $failed_items = array();
 
-        foreach ( $batch as $post_id ) {
+    // (Removed duplicate batch-level pre-announcement; per-item pre announcement handles it.)
+
+    $batch_count = count( $batch );
+    foreach ( $batch as $i => $post_id ) {
+            // Set current project and status for the UI before processing this item
+            $progress_now = get_option( 'osprojects_refresh_progress', array() );
+            $processed_count = isset( $progress_now['processed'] ) ? (int) $progress_now['processed'] : 0;
+            $failed_count = isset( $progress_now['failed'] ) ? (int) $progress_now['failed'] : 0;
+            $index = $processed_count + $failed_count + 1; // 1-based index of attempt
+            // Compute a display title with fallbacks
+            $title = get_the_title( $post_id );
+            if ( ! is_string( $title ) ) { $title = ''; }
+            if ( trim( $title ) === '' ) {
+                $repo_url_meta = get_post_meta( $post_id, 'osp_project_repository', true );
+                if ( is_string( $repo_url_meta ) && trim( $repo_url_meta ) !== '' ) {
+                    // Use repo name from URL as a friendly fallback
+                    $parsed = wp_parse_url( $repo_url_meta );
+                    if ( isset( $parsed['path'] ) ) {
+                        $path = trim( $parsed['path'], '/' );
+                        // repo path often like owner/repo
+                        $parts = explode( '/', $path );
+                        $title = end( $parts );
+                    } else {
+                        $title = $repo_url_meta;
+                    }
+                } else {
+                    $post_name = get_post_field( 'post_name', $post_id );
+                    $title = $post_name ? $post_name : ( 'Project #' . $post_id );
+                }
+            }
+            $progress_now['status'] = 'processing';
+            $progress_now['current_project'] = array( 'post_id' => $post_id, 'title' => $title, 'index' => $index );
+            $total = isset( $progress_now['total'] ) ? (int) $progress_now['total'] : 0;
+            $progress_now['status_text'] = sprintf( 'Processing %s - %d / %d processed, %d failed', $title, $processed_count, $total, $failed_count );
+            update_option( 'osprojects_refresh_progress', $progress_now );
+
             try {
                 $repo_url = get_post_meta( $post_id, 'osp_project_repository', true );
                 if ( empty( $repo_url ) ) {
                     $failed++;
+                    // Update failed count immediately
+                    $p = get_option( 'osprojects_refresh_progress', array() );
+                    $p['failed'] = isset( $p['failed'] ) ? $p['failed'] + 1 : 1;
+                    if ( ! isset( $p['failed_items'] ) ) $p['failed_items'] = array();
+                    $p['failed_items'][] = array( 'post_id' => $post_id, 'title' => get_the_title( $post_id ), 'error' => 'Missing repository URL' );
+                    // Keep last status_text; next loop will set new one
+                    update_option( 'osprojects_refresh_progress', $p );
                     continue;
                 }
 
@@ -668,30 +722,204 @@ class OSProjectsProject {
                 if ( method_exists( $instance, 'update_project_meta_fields' ) ) {
                     $instance->update_project_meta_fields( $post_id, $meta_data );
                 }
+
+                // Increment processed immediately so UI updates per-item
                 $processed++;
+                // Mark this item complete and clear current_project (next item will set it at loop start)
+                $p = get_option( 'osprojects_refresh_progress', array() );
+                $p['processed'] = isset( $p['processed'] ) ? $p['processed'] + 1 : 1;
+                if ( ! isset( $p['processed_items'] ) ) $p['processed_items'] = array();
+                $p['processed_items'][] = array( 'post_id' => $post_id, 'title' => $title, 'status' => 'ok' );
+                // Announce next item (if any) so UI reflects the actual currently processing project
+                if ( $i + 1 < $batch_count ) {
+                    $next_id = $batch[ $i + 1 ];
+                    $next_title = get_the_title( $next_id );
+                    if ( ! is_string( $next_title ) ) { $next_title = ''; }
+                    if ( trim( $next_title ) === '' ) {
+                        $repo_url_meta = get_post_meta( $next_id, 'osp_project_repository', true );
+                        if ( is_string( $repo_url_meta ) && trim( $repo_url_meta ) !== '' ) {
+                            $parsed = wp_parse_url( $repo_url_meta );
+                            if ( isset( $parsed['path'] ) ) {
+                                $path = trim( $parsed['path'], '/' );
+                                $parts = explode( '/', $path );
+                                $next_title = end( $parts );
+                            } else {
+                                $next_title = $repo_url_meta;
+                            }
+                        } else {
+                            $post_name = get_post_field( 'post_name', $next_id );
+                            $next_title = $post_name ? $post_name : ( 'Project #' . $next_id );
+                        }
+                    }
+                    $p['status'] = 'processing';
+                    $p['current_project'] = array( 'post_id' => $next_id, 'title' => $next_title, 'index' => $p['processed'] + $p['failed'] + 1 );
+                    $total_now = isset( $p['total'] ) ? (int) $p['total'] : 0;
+                    $p['status_text'] = sprintf( 'Processing %s - %d / %d processed, %d failed', $next_title, (int)$p['processed'], $total_now, (int)$p['failed'] );
+                } else {
+                    // No next item in this batch; clear current until batch/queue handler updates to finished or next batch
+                    $p['current_project'] = null;
+                }
+                update_option( 'osprojects_refresh_progress', $p );
             } catch ( Exception $e ) {
                 error_log( 'OSProjects refresh error for post ' . $post_id . ': ' . $e->getMessage() );
                 $failed++;
                 $failed_items[] = array( 'post_id' => $post_id, 'title' => get_the_title( $post_id ), 'error' => $e->getMessage() );
+                // Persist failed item immediately
+                $p = get_option( 'osprojects_refresh_progress', array() );
+                $p['failed'] = isset( $p['failed'] ) ? $p['failed'] + 1 : 1;
+                if ( ! isset( $p['failed_items'] ) ) $p['failed_items'] = array();
+                $p['failed_items'][] = array( 'post_id' => $post_id, 'title' => get_the_title( $post_id ), 'error' => $e->getMessage() );
+                if ( ! isset( $p['processed_items'] ) ) $p['processed_items'] = array();
+                // Record failed in processed_items for debug list
+                $fail_title = get_the_title( $post_id );
+                if ( ! is_string( $fail_title ) || trim( $fail_title ) === '' ) {
+                    $repo_url_meta = get_post_meta( $post_id, 'osp_project_repository', true );
+                    if ( is_string( $repo_url_meta ) && trim( $repo_url_meta ) !== '' ) {
+                        $parsed = wp_parse_url( $repo_url_meta );
+                        if ( isset( $parsed['path'] ) ) {
+                            $path = trim( $parsed['path'], '/' );
+                            $parts = explode( '/', $path );
+                            $fail_title = end( $parts );
+                        } else {
+                            $fail_title = $repo_url_meta;
+                        }
+                    } else {
+                        $post_name = get_post_field( 'post_name', $post_id );
+                        $fail_title = $post_name ? $post_name : ( 'Project #' . $post_id );
+                    }
+                }
+                $p['processed_items'][] = array( 'post_id' => $post_id, 'title' => $fail_title, 'status' => 'failed', 'error' => $e->getMessage() );
+                // Announce next item (if any)
+                if ( $i + 1 < $batch_count ) {
+                    $next_id = $batch[ $i + 1 ];
+                    $next_title = get_the_title( $next_id );
+                    if ( ! is_string( $next_title ) ) { $next_title = ''; }
+                    if ( trim( $next_title ) === '' ) {
+                        $repo_url_meta = get_post_meta( $next_id, 'osp_project_repository', true );
+                        if ( is_string( $repo_url_meta ) && trim( $repo_url_meta ) !== '' ) {
+                            $parsed = wp_parse_url( $repo_url_meta );
+                            if ( isset( $parsed['path'] ) ) {
+                                $path = trim( $parsed['path'], '/' );
+                                $parts = explode( '/', $path );
+                                $next_title = end( $parts );
+                            } else {
+                                $next_title = $repo_url_meta;
+                            }
+                        } else {
+                            $post_name = get_post_field( 'post_name', $next_id );
+                            $next_title = $post_name ? $post_name : ( 'Project #' . $next_id );
+                        }
+                    }
+                    $p['status'] = 'processing';
+                    $p['current_project'] = array( 'post_id' => $next_id, 'title' => $next_title, 'index' => $p['processed'] + $p['failed'] + 1 );
+                    $total_now = isset( $p['total'] ) ? (int) $p['total'] : 0;
+                    $p['status_text'] = sprintf( 'Processing %s - %d / %d processed, %d failed', $next_title, (int)$p['processed'], $total_now, (int)$p['failed'] );
+                } else {
+                    $p['current_project'] = null;
+                }
+                update_option( 'osprojects_refresh_progress', $p );
                 continue;
             } catch ( Error $e ) {
                 error_log( 'OSProjects refresh fatal error for post ' . $post_id . ': ' . $e->getMessage() );
                 $failed++;
                 $failed_items[] = array( 'post_id' => $post_id, 'title' => get_the_title( $post_id ), 'error' => $e->getMessage() );
+                $p = get_option( 'osprojects_refresh_progress', array() );
+                $p['failed'] = isset( $p['failed'] ) ? $p['failed'] + 1 : 1;
+                if ( ! isset( $p['failed_items'] ) ) $p['failed_items'] = array();
+                $p['failed_items'][] = array( 'post_id' => $post_id, 'title' => get_the_title( $post_id ), 'error' => $e->getMessage() );
+                if ( ! isset( $p['processed_items'] ) ) $p['processed_items'] = array();
+                $fail_title = get_the_title( $post_id );
+                if ( ! is_string( $fail_title ) || trim( $fail_title ) === '' ) {
+                    $repo_url_meta = get_post_meta( $post_id, 'osp_project_repository', true );
+                    if ( is_string( $repo_url_meta ) && trim( $repo_url_meta ) !== '' ) {
+                        $parsed = wp_parse_url( $repo_url_meta );
+                        if ( isset( $parsed['path'] ) ) {
+                            $path = trim( $parsed['path'], '/' );
+                            $parts = explode( '/', $path );
+                            $fail_title = end( $parts );
+                        } else {
+                            $fail_title = $repo_url_meta;
+                        }
+                    } else {
+                        $post_name = get_post_field( 'post_name', $post_id );
+                        $fail_title = $post_name ? $post_name : ( 'Project #' . $post_id );
+                    }
+                }
+                $p['processed_items'][] = array( 'post_id' => $post_id, 'title' => $fail_title, 'status' => 'failed', 'error' => $e->getMessage() );
+                if ( $i + 1 < $batch_count ) {
+                    $next_id = $batch[ $i + 1 ];
+                    $next_title = get_the_title( $next_id );
+                    if ( ! is_string( $next_title ) ) { $next_title = ''; }
+                    if ( trim( $next_title ) === '' ) {
+                        $repo_url_meta = get_post_meta( $next_id, 'osp_project_repository', true );
+                        if ( is_string( $repo_url_meta ) && trim( $repo_url_meta ) !== '' ) {
+                            $parsed = wp_parse_url( $repo_url_meta );
+                            if ( isset( $parsed['path'] ) ) {
+                                $path = trim( $parsed['path'], '/' );
+                                $parts = explode( '/', $path );
+                                $next_title = end( $parts );
+                            } else {
+                                $next_title = $repo_url_meta;
+                            }
+                        } else {
+                            $post_name = get_post_field( 'post_name', $next_id );
+                            $next_title = $post_name ? $post_name : ( 'Project #' . $next_id );
+                        }
+                    }
+                    $p['status'] = 'processing';
+                    $p['current_project'] = array( 'post_id' => $next_id, 'title' => $next_title, 'index' => $p['processed'] + $p['failed'] + 1 );
+                    $total_now = isset( $p['total'] ) ? (int) $p['total'] : 0;
+                    $p['status_text'] = sprintf( 'Processing %s - %d / %d processed, %d failed', $next_title, (int)$p['processed'], $total_now, (int)$p['failed'] );
+                } else {
+                    $p['current_project'] = null;
+                }
+                update_option( 'osprojects_refresh_progress', $p );
                 continue;
             }
         }
 
-        // Update queue and progress
+        // Update queue
         update_option( 'osprojects_refresh_queue', $queue );
-    $progress = get_option( 'osprojects_refresh_progress', array( 'total' => 0, 'processed' => 0, 'failed' => 0, 'failed_items' => array() ) );
-    $progress['processed'] = isset( $progress['processed'] ) ? $progress['processed'] + $processed : $processed;
-    $progress['failed'] = isset( $progress['failed'] ) ? $progress['failed'] + $failed : $failed;
-    if ( ! isset( $progress['failed_items'] ) ) $progress['failed_items'] = array();
-    $progress['failed_items'] = array_merge( $progress['failed_items'], $failed_items );
+
+        // Update finished/current state if queue drained
+        $progress = get_option( 'osprojects_refresh_progress', array( 'total' => 0, 'processed' => 0, 'failed' => 0, 'failed_items' => array() ) );
         if ( empty( $queue ) ) {
             $progress['finished'] = time();
+            // Clear current project when finished
+            $progress['current_project'] = null;
+            $progress['status'] = 'finished';
+            $processed = isset( $progress['processed'] ) ? (int) $progress['processed'] : 0;
+            $total = isset( $progress['total'] ) ? (int) $progress['total'] : 0;
+            $failed = isset( $progress['failed'] ) ? (int) $progress['failed'] : 0;
+            $progress['status_text'] = sprintf( 'Processing completed - %d / %d processed, %d failed', $processed, $total, $failed );
+        } else {
+            // Keep processing state between batches
+            $progress['status'] = 'processing';
+            // Pre-announce the first item of the next batch to avoid stale title during the inter-batch gap
+            $next_id = $queue[0];
+            $next_title = get_the_title( $next_id );
+            if ( ! is_string( $next_title ) ) { $next_title = ''; }
+            if ( trim( $next_title ) === '' ) {
+                $repo_url_meta = get_post_meta( $next_id, 'osp_project_repository', true );
+                if ( is_string( $repo_url_meta ) && trim( $repo_url_meta ) !== '' ) {
+                    $parsed = wp_parse_url( $repo_url_meta );
+                    if ( isset( $parsed['path'] ) ) {
+                        $path = trim( $parsed['path'], '/' );
+                        $parts = explode( '/', $path );
+                        $next_title = end( $parts );
+                    } else {
+                        $next_title = $repo_url_meta;
+                    }
+                } else {
+                    $post_name = get_post_field( 'post_name', $next_id );
+                    $next_title = $post_name ? $post_name : ( 'Project #' . $next_id );
+                }
+            }
+            $progress['current_project'] = array( 'post_id' => $next_id, 'title' => $next_title, 'index' => (int)$progress['processed'] + (int)$progress['failed'] + 1 );
+            $total_now = isset( $progress['total'] ) ? (int) $progress['total'] : 0;
+            $progress['status_text'] = sprintf( 'Processing %s - %d / %d processed, %d failed', $next_title, (int)$progress['processed'], $total_now, (int)$progress['failed'] );
         }
+        if ( ! isset( $progress['failed_items'] ) ) $progress['failed_items'] = array();
         update_option( 'osprojects_refresh_progress', $progress );
 
         // Schedule next batch if queue remains

@@ -398,20 +398,73 @@ class OSProjectsGit
 
     public function get_project_title()
     {
+        // Prefer a level-1 Markdown heading (# Title) only if it is the first non-empty line
         if (!empty($this->fileContents['README.md'])) {
             $content = $this->fileContents['README.md'];
             $lines = preg_split('/\r\n|\r|\n/', $content);
+            // find first non-empty line
             foreach ($lines as $line) {
-                if (preg_match('/^#\s*(.+)$/', $line, $matches)) {
-                    return trim($matches[1]);
+                if (trim($line) === '') {
+                    continue;
                 }
-            }
-        } elseif (!empty($this->fileContents['readme.txt'])) {
-            $content = $this->fileContents['readme.txt'];
-            if (preg_match('/^Plugin Name:\s*(.+)$/mi', $content, $matches)) {
-                return trim($matches[1]);
+                // Match only a single leading # followed by a space (level-1 heading)
+                if (preg_match('/^#\s+(.+)$/', $line, $matches)) {
+                    $title = trim($matches[1]);
+                    // Strip trailing dots
+                    $title = rtrim($title, ". ");
+                    return $title;
+                }
+                // If first non-empty line is not a level-1 heading, do not use any subsequent headings
+                break;
             }
         }
+
+        // Fallbacks: plugin readme, composer/package name, then repo basename
+        if (!empty($this->fileContents['readme.txt'])) {
+            $content = $this->fileContents['readme.txt'];
+            if (preg_match('/^Plugin Name:\s*(.+)$/mi', $content, $matches)) {
+                $title = trim($matches[1]);
+                $title = rtrim($title, ". ");
+                return $title;
+            }
+        }
+
+        // Try composer.json/package.json name
+        if (!empty($this->fileContents['composer.json'])) {
+            $json = json_decode($this->fileContents['composer.json'], true);
+            if (is_array($json) && !empty($json['name'])) {
+                // Use package name (vendor/package) as readable fallback
+                $title = trim($json['name']);
+                $title = rtrim($title, ". ");
+                return $title;
+            }
+        }
+
+        if (!empty($this->fileContents['package.json'])) {
+            $json = json_decode($this->fileContents['package.json'], true);
+            if (is_array($json) && !empty($json['name'])) {
+                $title = trim($json['name']);
+                $title = rtrim($title, ". ");
+                return $title;
+            }
+        }
+
+        // Finally fall back to repository basename from URL
+        if (!empty($this->repo_url)) {
+            $parsed = parse_url($this->repo_url);
+            if (!empty($parsed['path'])) {
+                $path = trim($parsed['path'], '/');
+                $parts = explode('/', $path);
+                $repo = end($parts);
+                // strip .git suffix
+                $repo = preg_replace('/\.git$/', '', $repo);
+                if ($repo) {
+                    $repo = rtrim($repo, ". ");
+                    return $repo;
+                }
+            }
+        }
+
         return null;
     }
 
