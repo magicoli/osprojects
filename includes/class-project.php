@@ -113,7 +113,7 @@ class OSProjectsProject {
             'has_archive'        => $project_url_prefix,
             'hierarchical'       => true,
             'menu_position'      => null,
-            'supports'           => array( 'title', 'editor', 'thumbnail', 'excerpt', 'comments', 'revisions', 'page-attributes' ),
+            'supports'           => array( 'title', 'editor', 'thumbnail', 'excerpt', 'comments', 'page-attributes' ),
             'show_in_rest'       => OSProjects::get_option('enable_gutenberg'), // Use the OSProjectsSettings method for show_in_rest
             'show_in_admin_bar'  => true, // Ensure it shows in the admin bar
             'taxonomies'         => array( 'project_category', 'post_tag' )
