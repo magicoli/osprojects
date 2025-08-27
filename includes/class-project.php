@@ -50,6 +50,12 @@ class OSProjectsProject {
         add_action( 'restrict_manage_posts', array( $this, 'add_project_category_filter' ) );
         add_filter( 'request', array( $this, 'filter_projects_by_category_request' ) );
         add_action( 'pre_get_posts', array( $this, 'filter_projects_by_category' ) );
+
+        // Add custom columns for project list
+        add_filter( 'manage_project_posts_columns', array( $this, 'add_project_columns' ) );
+        add_action( 'manage_project_posts_custom_column', array( $this, 'render_project_columns' ), 10, 2 );
+        add_filter( 'manage_edit-project_sortable_columns', array( $this, 'make_project_columns_sortable' ) );
+        add_action( 'pre_get_posts', array( $this, 'handle_project_column_sorting' ) );
     }
 
     /**
@@ -642,6 +648,90 @@ class OSProjectsProject {
         }
 
         return $query_vars;
+    }
+
+    /**
+     * Add custom columns to the project admin list
+     */
+    public function add_project_columns( $columns ) {
+        // Insert repository column after title
+        $new_columns = array();
+        foreach ( $columns as $key => $title ) {
+            $new_columns[$key] = $title;
+            if ( $key === 'title' ) {
+                $new_columns['repository'] = __( 'Repository', 'osprojects' );
+            }
+        }
+        return $new_columns;
+    }
+
+    /**
+     * Render custom column content
+     */
+    public function render_project_columns( $column, $post_id ) {
+        switch ( $column ) {
+            case 'repository':
+                $repo_url = get_post_meta( $post_id, 'osp_project_repository', true );
+                if ( $repo_url ) {
+                    $short_repo = $this->get_short_repo_name( $repo_url );
+                    if ( $short_repo ) {
+                        echo '<a href="' . esc_url( $repo_url ) . '" target="_blank" title="' . esc_attr( $repo_url ) . '">' . esc_html( $short_repo ) . '</a>';
+                    } else {
+                        echo '<a href="' . esc_url( $repo_url ) . '" target="_blank">' . esc_html( $repo_url ) . '</a>';
+                    }
+                } else {
+                    echo '<span class="na">—</span>';
+                }
+                break;
+        }
+    }
+
+    /**
+     * Make custom columns sortable
+     */
+    public function make_project_columns_sortable( $columns ) {
+        $columns['repository'] = 'repository';
+        return $columns;
+    }
+
+    /**
+     * Handle sorting for custom columns
+     */
+    public function handle_project_column_sorting( $query ) {
+        if ( ! is_admin() || ! $query->is_main_query() || $query->get( 'post_type' ) !== 'project' ) {
+            return;
+        }
+
+        $orderby = $query->get( 'orderby' );
+
+        if ( $orderby === 'repository' ) {
+            $query->set( 'meta_key', 'osp_project_repository' );
+            $query->set( 'orderby', 'meta_value' );
+        }
+    }
+
+    /**
+     * Extract short repo name (user/repo) from repository URL
+     */
+    private function get_short_repo_name( $repo_url ) {
+        $parsed = wp_parse_url( $repo_url );
+        if ( ! isset( $parsed['path'] ) ) {
+            return false;
+        }
+
+        $path = trim( $parsed['path'], '/' );
+        
+        // Handle common Git hosting patterns
+        // Remove .git suffix if present
+        $path = preg_replace( '/\.git$/', '', $path );
+        
+        // Split by / and take last two parts for user/repo format
+        $parts = explode( '/', $path );
+        if ( count( $parts ) >= 2 ) {
+            return end( $parts ) !== '' ? $parts[ count( $parts ) - 2 ] . '/' . end( $parts ) : false;
+        }
+
+        return false;
     }
 
     public static function get_repo_project_id( $repo_url ) {
