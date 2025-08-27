@@ -838,7 +838,7 @@ class OSProjectsProject {
      * Add "Ignore" action to post row actions
      */
     public function add_ignore_row_action( $actions, $post ) {
-        if ( $post->post_type === 'project' ) {
+        if ( $post->post_type === 'project' && current_user_can( 'edit_post', $post->ID ) ) {
             if ( $post->post_status === 'ignored' ) {
                 // Add "Unignore" action for ignored posts - preserve current query args
                 $unignore_url = add_query_arg( array(
@@ -852,7 +852,7 @@ class OSProjectsProject {
                     esc_attr( sprintf( __( 'Unignore "%s"', 'osprojects' ), $post->post_title ) ),
                     __( 'Unignore', 'osprojects' )
                 );
-            } elseif ( $post->post_status !== 'trash' ) {
+            } elseif ( in_array( $post->post_status, array( 'publish', 'draft', 'pending', 'private' ) ) ) {
                 // Add "Ignore" action for non-ignored, non-trashed posts - preserve current query args
                 $ignore_url = add_query_arg( array(
                     'action' => 'ignore',
@@ -982,6 +982,7 @@ class OSProjectsProject {
                 ),
             ),
             'fields'         => 'ids',
+            'post_status'    => array( 'publish', 'draft', 'pending', 'private', 'ignored', 'trash' ),
         );
         $project_ids = get_posts( $args );
         if (empty($project_ids)) {

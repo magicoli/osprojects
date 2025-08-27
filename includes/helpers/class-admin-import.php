@@ -369,11 +369,12 @@ class OSProjectsAdminImport {
     }
 
     private function get_existing_repository_urls() {
-        // Fetch all project posts
+        // Fetch all project posts regardless of status to avoid duplicates
         $args = array(
             'post_type'      => 'project',
             'posts_per_page' => -1,
             'fields'         => 'ids',
+            'post_status'    => array( 'publish', 'draft', 'pending', 'private', 'ignored', 'trash' ),
         );
         $project_ids = get_posts( $args );
 
