@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/ingydotnet/git-subrepo#readme
+;
+[subrepo]
+	remote = https://github.com/magicoli/reclaim-details.git
+	branch = master
+	commit = e5a51befbe1cec3047fa79302d1960c482281450
+	parent = f2e6a8dd514cf6910cd3d4479e54c07627e98ae9
+	method = merge
+	cmdver = 0.4.9
