@@ -172,7 +172,7 @@ This plugin is licensed under the AGPL-3.0-or-later license.
 
 ---
 
-*Made with care by [Magiiic](https://magiiic.com/)*
+*Made with care by [Magìiíc](https://magiiic.com/)*
 
 
 == Installation ==
