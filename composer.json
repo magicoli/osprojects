@@ -1,11 +1,11 @@
 {
-    "name": "magicoli/wrap",
+    "name": "magicoli/osprojects",
     "description": "Open Source Projects plugin for WordPress",
     "type": "wordpress-plugin",
     "license": "AGPL-3.0-or-later",
     "authors": [
         {
-            "name": "Olivier van Helden",
+            "name": "Magiiic",
             "email": "olivier@van-helden.net"
         }
     ],

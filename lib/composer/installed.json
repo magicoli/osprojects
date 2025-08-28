@@ -2,26 +2,26 @@
     "packages": [
         {
             "name": "czproject/git-php",
-            "version": "v4.3.0",
-            "version_normalized": "4.3.0.0",
+            "version": "v4.5.0",
+            "version_normalized": "4.5.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/czproject/git-php.git",
-                "reference": "f7fe85cc526c5f8e7ed809f7f9c68f2696940a8a"
+                "reference": "3ea910e188849d5e239d65167010c05196310915"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/czproject/git-php/zipball/f7fe85cc526c5f8e7ed809f7f9c68f2696940a8a",
-                "reference": "f7fe85cc526c5f8e7ed809f7f9c68f2696940a8a",
+                "url": "https://api.github.com/repos/czproject/git-php/zipball/3ea910e188849d5e239d65167010c05196310915",
+                "reference": "3ea910e188849d5e239d65167010c05196310915",
                 "shasum": ""
             },
             "require": {
-                "php": ">=5.6.0"
+                "php": "8.0 - 8.4"
             },
             "require-dev": {
-                "nette/tester": "^2.0"
+                "nette/tester": "^2.4"
             },
-            "time": "2024-08-05T13:28:31+00:00",
+            "time": "2025-06-10T18:32:14+00:00",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -45,12 +45,16 @@
             ],
             "support": {
                 "issues": "https://github.com/czproject/git-php/issues",
-                "source": "https://github.com/czproject/git-php/tree/v4.3.0"
+                "source": "https://github.com/czproject/git-php/tree/v4.5.0"
             },
             "funding": [
                 {
                     "url": "https://www.janpecha.cz/donate/git-php/",
                     "type": "other"
+                },
+                {
+                    "url": "https://donate.stripe.com/7sIcO2a9maTSg2A9AA",
+                    "type": "stripe"
                 }
             ],
             "install-path": "../czproject/git-php"

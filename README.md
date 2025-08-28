@@ -1,5 +1,11 @@
 # Open Source Projects for WordPress
 
+![Version 1.0.0](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Stable 1.0.0](https://img.shields.io/badge/stable-1.0.0-green.svg)
+![WordPress 5.0+](https://img.shields.io/badge/WordPress-5.0%2B-blue.svg)
+![PHP 7.4+](https://img.shields.io/badge/PHP-7.4%2B-purple.svg)
+![License AGPLv3](https://img.shields.io/badge/license-AGPLv3-red.svg)
+
 A comprehensive WordPress plugin for showcasing and managing open source projects with automated GitHub integration, project metadata management, and multilingual support.
 
 ## Features

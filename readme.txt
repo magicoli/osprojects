@@ -2,9 +2,9 @@
 Contributors: (this should be a list of wordpress.org userid's)
 Donate link: https://example.com/
 Tags: comments, spam
-Requires at least: 4.5
+Requires at least: 5.0
 Tested up to: 6.8.2
-Requires PHP: 5.6
+Requires PHP: 7.4
 Stable tag: 1.0.0
 License: AGPLv3 or later
 License URI: https://www.gnu.org/licenses/agpl-3.0.html

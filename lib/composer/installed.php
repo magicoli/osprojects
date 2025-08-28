@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
-        'name' => 'magicoli/wrap',
+        'name' => 'magicoli/osprojects',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => '3bb011254295c9995fe66f960b12fa0755b13fac',
+        'reference' => '2fb1262501a2f767ed5eb4d1ee51f991f31a929b',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'czproject/git-php' => array(
-            'pretty_version' => 'v4.3.0',
-            'version' => '4.3.0.0',
-            'reference' => 'f7fe85cc526c5f8e7ed809f7f9c68f2696940a8a',
+            'pretty_version' => 'v4.5.0',
+            'version' => '4.5.0.0',
+            'reference' => '3ea910e188849d5e239d65167010c05196310915',
             'type' => 'library',
             'install_path' => __DIR__ . '/../czproject/git-php',
             'aliases' => array(),
@@ -28,10 +28,10 @@
             'aliases' => array(),
             'dev_requirement' => false,
         ),
-        'magicoli/wrap' => array(
+        'magicoli/osprojects' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '3bb011254295c9995fe66f960b12fa0755b13fac',
+            'reference' => '2fb1262501a2f767ed5eb4d1ee51f991f31a929b',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

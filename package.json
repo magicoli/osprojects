@@ -3,7 +3,7 @@
   "description": "Open Source Projects plugin for WordPress",
   "version": "1.0.0",
   "main": "Gruntfile.js",
-  "author": "Magiiic.org",
+  "author": "Magiiic",
   "license": "AGPL-3.0-or-later",
   "workspaces": {
     "packages": [

@@ -4,7 +4,7 @@
  * Plugin URI:      https://magiiic.org/
  * Description:     Showcase open source projects
  * Author:          Magiiic
- * Author URI:      https://magiiic.org/
+ * Author URI:      https://magiiic.com/
  * Text Domain:     osprojects
  * Domain Path:     /languages
  * Version:         1.0.0
