@@ -50,7 +50,7 @@ class OSProjectsGit {
 			return;
 		}
 
-		require_once OSPROJECTS_PLUGIN_PATH . 'lib/autoload.php';
+		require_once OSPROJECTS_PLUGIN_PATH . 'vendor/autoload.php';
 
 		// Set environment variable to ensure Git outputs messages in English
 		putenv( 'LANG=C' );

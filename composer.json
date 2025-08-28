@@ -18,7 +18,6 @@
         "magicoli/php-bump-library": "^1.0"
     },
     "config": {
-        "vendor-dir": "lib",
         "allow-plugins": {
             "dealerdirect/phpcodesniffer-composer-installer": true
         }
