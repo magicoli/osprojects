@@ -1,0 +1,500 @@
+# Copyright (C) 2025 Magiiic
+# This file is distributed under the same license as the Open Source Projects for WordPress package.
+msgid ""
+msgstr ""
+"Project-Id-Version: Open Source Projects for WordPress 1.0.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/osprojects\n"
+"POT-Creation-Date: 2025-08-28 00:06:40+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2025-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Poedit-Country: United States\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-KeywordsList: "
+"__;_e;_x:1,2c;_ex:1,2c;_n:1,2;_nx:1,2,4c;_n_noop:1,2;_nx_noop:1,2,3c;esc_"
+"attr__;esc_html__;esc_attr_e;esc_html_e;esc_attr_x:1,2c;esc_html_x:1,2c;\n"
+"X-Poedit-Basepath: ../\n"
+"X-Poedit-SearchPath-0: .\n"
+"X-Poedit-Bookmarks: \n"
+"X-Textdomain-Support: yes\n"
+"X-Generator: grunt-wp-i18n 1.0.4\n"
+
+#: includes/class-project.php:85 includes/class-project.php:87
+#: includes/class-project.php:523 includes/class-project.php:524
+msgid "Projects"
+msgstr ""
+
+#: includes/class-project.php:86 includes/class-project.php:88
+msgid "Project"
+msgstr ""
+
+#: includes/class-project.php:89
+msgid "Add New"
+msgstr ""
+
+#: includes/class-project.php:90
+msgid "Add New Project"
+msgstr ""
+
+#: includes/class-project.php:91
+msgid "New Project"
+msgstr ""
+
+#: includes/class-project.php:92 includes/class-project.php:1544
+msgid "Edit Project"
+msgstr ""
+
+#: includes/class-project.php:93 includes/class-project.php:1549
+msgid "View Project"
+msgstr ""
+
+#: includes/class-project.php:94
+msgid "All Projects"
+msgstr ""
+
+#: includes/class-project.php:95
+msgid "Search Projects"
+msgstr ""
+
+#: includes/class-project.php:96
+msgid "Parent Projects:"
+msgstr ""
+
+#: includes/class-project.php:97
+msgid "No projects found."
+msgstr ""
+
+#: includes/class-project.php:98
+msgid "No projects found in Trash."
+msgstr ""
+
+#: includes/class-project.php:130 includes/class-project.php:534
+msgid "Project Categories"
+msgstr ""
+
+#: includes/class-project.php:131
+msgid "Project Category"
+msgstr ""
+
+#: includes/class-project.php:132
+msgid "Search Project Categories"
+msgstr ""
+
+#: includes/class-project.php:133
+msgid "All Project Categories"
+msgstr ""
+
+#: includes/class-project.php:134
+msgid "Parent Project Category"
+msgstr ""
+
+#: includes/class-project.php:135
+msgid "Parent Project Category:"
+msgstr ""
+
+#: includes/class-project.php:136
+msgid "Edit Project Category"
+msgstr ""
+
+#: includes/class-project.php:137
+msgid "Update Project Category"
+msgstr ""
+
+#: includes/class-project.php:138
+msgid "Add New Project Category"
+msgstr ""
+
+#: includes/class-project.php:139
+msgid "New Project Category Name"
+msgstr ""
+
+#: includes/class-project.php:140 includes/class-project.php:535
+msgid "Categories"
+msgstr ""
+
+#: includes/class-project.php:170
+msgid "Ignored <span class=\"count\">(%s)</span>"
+msgid_plural "Ignored <span class=\"count\">(%s)</span>"
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/class-project.php:193
+msgid "Project Details"
+msgstr ""
+
+#: includes/class-project.php:544 includes/class-project.php:545
+msgid "Tags"
+msgstr ""
+
+#: includes/class-project.php:676
+msgid "All Categories"
+msgstr ""
+
+#: includes/class-project.php:677
+msgid "Uncategorized"
+msgstr ""
+
+#: includes/class-project.php:845 includes/helpers/class-admin-import.php:364
+#: templates/project-content.php:15
+msgid "Repository"
+msgstr ""
+
+#: includes/class-project.php:935
+msgid "Unignore \"%s\""
+msgstr ""
+
+#: includes/class-project.php:936
+msgid "Unignore"
+msgstr ""
+
+#: includes/class-project.php:948
+msgid "Ignore \"%s\""
+msgstr ""
+
+#: includes/class-project.php:949 includes/class-project.php:960
+msgid "Ignore"
+msgstr ""
+
+#: includes/class-project.php:995
+msgid "%d project ignored."
+msgid_plural "%d projects ignored."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/class-project.php:1004
+msgid "Project unignored."
+msgstr ""
+
+#: includes/class-project.php:1027
+msgid "Security check failed."
+msgstr ""
+
+#: includes/class-project.php:1032
+msgid "You do not have permission to perform this action."
+msgstr ""
+
+#: includes/class-settings.php:66 templates/refresh-streaming.php:6
+msgid "Insufficient permissions"
+msgstr ""
+
+#: includes/class-settings.php:88
+msgid "Project URL Prefix"
+msgstr ""
+
+#: includes/class-settings.php:96
+msgid "Enable Gutenberg"
+msgstr ""
+
+#: includes/class-settings.php:112
+msgid "Gutenberg blocs mode. Disable to use classic edit page."
+msgstr ""
+
+#: includes/class-settings.php:113
+msgid ""
+"In some cases, Gutenberg edit-mode can cause saving to hang. Try deleting "
+"cookies before disabling Gutenberg."
+msgstr ""
+
+#: includes/class-settings.php:123 includes/class-settings.php:124
+msgid "Settings"
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:30
+#: includes/helpers/class-admin-import.php:31
+#: includes/helpers/class-admin-import.php:378
+msgid "Import"
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:48
+#: includes/helpers/class-admin-import.php:267
+msgid "Import GitHub Repositories"
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:50
+msgid "This page is deprecated. Please use the importer instead."
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:53
+#. translators: %s: Importer URL
+msgid "Go to the %s to import GitHub repositories."
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:54
+msgid "Importer"
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:63
+msgid "OSProjects Importer"
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:64
+msgid "Import GitHub repositories as projects."
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:86
+msgid "No repositories were selected for import."
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:104
+#: includes/helpers/class-admin-import.php:210
+msgid "Try again"
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:135
+msgid "%s had already a project."
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:180
+msgid "%s - Repository marked as ignored: %s"
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:185
+msgid "%s imported successfully."
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:219
+#: includes/helpers/class-admin-import.php:240
+msgid "Import GitHub Repositories:"
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:232
+#. translators: 1: Number of imported repositories
+msgid "Total Imported: %1$d"
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:253
+#. translators: 1: Number of errors
+msgid "Total Errors: %1$d"
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:260
+msgid "Back to Importer"
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:274
+msgid "GitHub User URL"
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:283
+msgid "Check"
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:285
+msgid "Check again"
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:300
+msgid "Select Repositories to Import"
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:307
+msgid "Select the repositories you wish to import from %s."
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:317
+msgid "Found %d repositories"
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:325
+msgid "Warning:"
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:327
+msgid ""
+"Repository limit reached. Only the first %d repositories are shown. This "
+"user may have more repositories that are not displayed."
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:334
+msgid "Select All"
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:335
+msgid "Select None"
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:336
+msgid "Cancel"
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:342
+msgid "Repository Name"
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:343
+msgid "Actions"
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:344
+msgid "Description"
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:455
+#: includes/helpers/class-admin-import.php:460
+msgid "Invalid GitHub URL."
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:495
+msgid "Unable to fetch repositories."
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:500
+msgid "GitHub API returned an error."
+msgstr ""
+
+#: includes/helpers/class-admin-import.php:534
+msgid "No repositories found for this user."
+msgstr ""
+
+#: includes/init-class.php:34 includes/init-class.php:35
+msgid "Open Source Projects"
+msgstr ""
+
+#: templates/project-content.php:13
+msgid "Release"
+msgstr ""
+
+#: templates/project-content.php:14
+msgid "Last Commit"
+msgstr ""
+
+#: templates/project-content.php:16
+#: templates/project-edit-metabox-details.php:13
+msgid "Official Website"
+msgstr ""
+
+#: templates/project-content.php:17
+msgid "License"
+msgstr ""
+
+#: templates/project-edit-metabox-details.php:21
+msgid "Git Repository"
+msgstr ""
+
+#: templates/project-edit-metabox-details.php:27
+msgid "Release: "
+msgstr ""
+
+#: templates/project-edit-metabox-details.php:31
+msgid "Last Commit: "
+msgstr ""
+
+#: templates/project-edit-metabox-details.php:35
+msgid "License: "
+msgstr ""
+
+#: templates/project-edit-metabox-details.php:39
+msgid "Project Title Updated: "
+msgstr ""
+
+#: templates/project-edit-metabox-details.php:43
+msgid "Project Description Updated: "
+msgstr ""
+
+#: templates/refresh-streaming.php:156
+msgid "Refreshing Projects"
+msgstr ""
+
+#: templates/refresh-streaming.php:160
+msgid "No projects found to refresh."
+msgstr ""
+
+#: templates/refresh-streaming.php:162
+msgid "Found %d projects. Starting refresh…"
+msgstr ""
+
+#: templates/refresh-streaming.php:168
+msgid "Starting…"
+msgstr ""
+
+#: templates/refresh-streaming.php:180
+msgid "Nothing to do."
+msgstr ""
+
+#: templates/refresh-streaming.php:212
+msgid "SKIP: Missing repository URL"
+msgstr ""
+
+#: templates/refresh-streaming.php:230 templates/refresh-streaming.php:258
+msgid "OK"
+msgstr ""
+
+#: templates/refresh-streaming.php:234
+msgid "OK (redirected)"
+msgstr ""
+
+#: templates/refresh-streaming.php:238
+msgid "IGNORED: Redirects to existing project"
+msgstr ""
+
+#: templates/refresh-streaming.php:242
+msgid "IGNORED: Repository not found (404)"
+msgstr ""
+
+#: templates/refresh-streaming.php:246
+msgid "IGNORED: Repository access forbidden"
+msgstr ""
+
+#: templates/refresh-streaming.php:250
+msgid "IGNORED: Network error"
+msgstr ""
+
+#: templates/refresh-streaming.php:254
+msgid "SKIP: Server error (will retry later)"
+msgstr ""
+
+#: templates/refresh-streaming.php:264 templates/refresh-streaming.php:268
+msgid "FAIL"
+msgstr ""
+
+#: templates/refresh-streaming.php:274
+msgid "Completed: %d OK, %d failed (Total %d)."
+msgstr ""
+
+#: templates/refresh-streaming.php:279
+msgid "Back to Settings"
+msgstr ""
+
+#: templates/settings.php:11
+msgid "OSProjects Settings"
+msgstr ""
+
+#: templates/settings.php:20
+msgid "Manual Refresh"
+msgstr ""
+
+#: templates/settings.php:21
+msgid ""
+"Trigger an immediate metadata refresh for all projects. The process runs on "
+"a dedicated progress page with live output."
+msgstr ""
+
+#: templates/settings.php:25
+msgid "Refresh all projects now"
+msgstr ""
+
+#. Plugin Name of the plugin/theme
+msgid "Open Source Projects for WordPress"
+msgstr ""
+
+#. Author URI of the plugin/theme
+msgid "https://magiiic.org/"
+msgstr ""
+
+#. Description of the plugin/theme
+msgid "Showcase open source projects"
+msgstr ""
+
+#. Author of the plugin/theme
+msgid "Magiiic"
+msgstr ""
+
+#: includes/class-project.php:164
+msgctxt "post status"
+msgid "Ignored"
+msgstr ""

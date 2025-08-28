@@ -5,7 +5,13 @@
   "main": "Gruntfile.js",
   "author": "Magiiic.org",
   "license": "AGPL-3.0-or-later",
+  "workspaces": {
+    "packages": [
+      "dev/grunt-wp-plugin-tasks"
+    ]
+  },
   "scripts": {
+    "prepare": "cd dev/grunt-wp-plugin-tasks && npm link",
     "start": "grunt default",
     "readme": "grunt readme",
     "i18n": "grunt i18n"

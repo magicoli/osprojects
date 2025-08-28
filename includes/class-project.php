@@ -127,16 +127,16 @@ class OSProjectsProject {
      */
     public function register_taxonomy() {
         $labels = array(
-            'name'              => __( 'Categories', 'osprojects' ),
-            'singular_name'     => __( 'Category', 'osprojects' ),
-            'search_items'      => __( 'Search Categories', 'osprojects' ),
-            'all_items'         => __( 'All Categories', 'osprojects' ),
-            'parent_item'       => __( 'Parent Category', 'osprojects' ),
-            'parent_item_colon' => __( 'Parent Category:', 'osprojects' ),
-            'edit_item'         => __( 'Edit Category', 'osprojects' ),
-            'update_item'       => __( 'Update Category', 'osprojects' ),
-            'add_new_item'      => __( 'Add New Category', 'osprojects' ),
-            'new_item_name'     => __( 'New Category Name', 'osprojects' ),
+            'name'              => __( 'Project Categories', 'osprojects' ),
+            'singular_name'     => __( 'Project Category', 'osprojects' ),
+            'search_items'      => __( 'Search Project Categories', 'osprojects' ),
+            'all_items'         => __( 'All Project Categories', 'osprojects' ),
+            'parent_item'       => __( 'Parent Project Category', 'osprojects' ),
+            'parent_item_colon' => __( 'Parent Project Category:', 'osprojects' ),
+            'edit_item'         => __( 'Edit Project Category', 'osprojects' ),
+            'update_item'       => __( 'Update Project Category', 'osprojects' ),
+            'add_new_item'      => __( 'Add New Project Category', 'osprojects' ),
+            'new_item_name'     => __( 'New Project Category Name', 'osprojects' ),
             'menu_name'         => __( 'Categories', 'osprojects' ),
         );
 
@@ -528,10 +528,10 @@ class OSProjectsProject {
             1
         );
 
-        // Add "Categories" submenu
+        // Add "Project Categories" submenu
         add_submenu_page(
             'osprojects',
-            __( 'Categories', 'osprojects' ),
+            __( 'Project Categories', 'osprojects' ),
             __( 'Categories', 'osprojects' ),
             'manage_options',
             'edit-tags.php?taxonomy=project_category&post_type=project',
