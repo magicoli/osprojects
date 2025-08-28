@@ -10,11 +10,11 @@
  * Version:         1.0.0
  *
  * @package         osprojects
-**/
+ */
 
 // If this file is called directly, abort.
 if ( ! defined( 'WPINC' ) ) {
-    die;
+	die;
 }
 
 // Constants
@@ -39,7 +39,6 @@ $OSprojects = new OSProjects();
 // No need to initialize OSProjectsGit here, it is initialized only on demand
 
 // Initialize classes
-$OSProjectsSettings = new OSProjectsSettings();
-$OSProjectsProject = new OSProjectsProject();
-
+$OSProjectsSettings    = new OSProjectsSettings();
+$OSProjectsProject     = new OSProjectsProject();
 $OSProjectsAdminImport = new OSProjectsAdminImport();

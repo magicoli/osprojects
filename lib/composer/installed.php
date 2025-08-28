@@ -3,7 +3,7 @@
         'name' => 'magicoli/wrap',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => '45f3bb6f5542eb9a1dbc307cc902a83f4f90e618',
+        'reference' => '3bb011254295c9995fe66f960b12fa0755b13fac',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -31,7 +31,7 @@
         'magicoli/wrap' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '45f3bb6f5542eb9a1dbc307cc902a83f4f90e618',
+            'reference' => '3bb011254295c9995fe66f960b12fa0755b13fac',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

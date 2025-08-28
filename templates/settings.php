@@ -1,14 +1,14 @@
 <?php
 /**
  * Settings template for settings page.
-**/
+ **/
 
 // If this file is called directly, abort.
 if ( ! defined( 'WPINC' ) ) {
-    die;
+	die;
 }
 
-echo "<h1>" . __( 'OSProjects Settings', 'osprojects' ) . "</h1>";
+echo '<h1>' . __( 'OSProjects Settings', 'osprojects' ) . '</h1>';
 
 echo '<form method="post" action="options.php">';
 settings_fields( 'osprojects-settings-group' );

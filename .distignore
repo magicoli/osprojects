@@ -30,7 +30,6 @@ multisite.xml.dist
 phpcs.xml
 .phpcs.xml.dist
 phpcs.xml.dist
-README.md
 webpack.config.js
 wp-cli.local.yml
 yarn.lock
@@ -40,5 +39,8 @@ node_modules
 *.sql
 *.tar.gz
 *.zip
-tests/
-src/
+CHANGELOG.md
+DEVELOPERS.md
+INSTALLATION.md
+README.md
+dev/**

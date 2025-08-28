@@ -1,40 +1,39 @@
-
 .osprojects-field {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
+	display: flex;
+	align-items: center;
+	margin-bottom: 10px;
 }
 .osprojects-field label {
-    width: 200px;
-    margin-right: 10px;
+	width: 200px;
+	margin-right: 10px;
 }
 .osprojects-field input {
-    flex: 1;
+	flex: 1;
 }
 
 /* filepath: /home/magic/domains/magiiic.org/www/w/wp-content/plugins/osprojects/css/admin-styles.css */
 .notification {
-    color: #0073aa; /* WordPress admin blue for informational messages */
-    font-weight: bold;
-    margin-top: 5px;
+	color: #0073aa; /* WordPress admin blue for informational messages */
+	font-weight: bold;
+	margin-top: 5px;
 }
 .notification.error {
-    color: #dc3232; /* Red for errors */
+	color: #dc3232; /* Red for errors */
 }
 .notification.loading {
-    color: #ffba00; /* Yellow for loading */
+	color: #ffba00; /* Yellow for loading */
 }
 
 .wp-list-table {
-    font-size: 0.9em;
+	font-size: 0.9em;
 }
 
 .wp-list-table th {
-    white-space: nowrap;
-    text-align: left;
-    padding-right: 10px;
+	white-space: nowrap;
+	text-align: left;
+	padding-right: 10px;
 }
 
 .wp-list-table td {
-    padding-left: 10px;
+	padding-left: 10px;
 }
