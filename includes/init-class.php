@@ -36,7 +36,7 @@ class OSProjects {
 			'manage_options',
 			'osprojects',
 			array( $this, 'dashboard' ),
-			'dashicons-editor-code',
+			$this->get_menu_icon(),
 			6
 		);
 
@@ -59,6 +59,25 @@ class OSProjects {
 	public function dashboard() {
 		// Load the dashboard template
 		require_once OSPROJECTS_PLUGIN_PATH . 'templates/dashboard.php';
+	}
+
+	/**
+	 * Get SVG menu icon as data URI
+	 */
+	private function get_menu_icon() {
+		$svg_file = OSPROJECTS_PLUGIN_PATH . 'assets/menu-icon.svg';
+		
+		// Check if the SVG file exists
+		if ( ! file_exists( $svg_file ) ) {
+			// Fallback to dashicon if SVG file is missing
+			return 'dashicons-editor-code';
+		}
+		
+		// Read the SVG file content
+		$svg_content = file_get_contents( $svg_file );
+		
+		// Return as data URI
+		return 'data:image/svg+xml;base64,' . base64_encode( $svg_content );
 	}
 
 	/**

@@ -14,3 +14,4 @@ wp-cli.local.yml
 *.tar.gz
 *.zip
 node_modules/
+tmp/
