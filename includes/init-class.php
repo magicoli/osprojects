@@ -18,6 +18,9 @@ class OSProjects {
 	 * Initialize the plugin
 	 */
 	public function init() {
+		// Load dependencies
+		require_once OSPROJECTS_PLUGIN_PATH . 'lib/reclaim-details/init.php';
+
 		// Load plugin text domain
 		add_action( 'init', array( $this, 'load_plugin_textdomain' ) );
 

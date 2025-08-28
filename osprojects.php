@@ -1,8 +1,9 @@
 <?php
 /**
  * Plugin Name:     Open Source Projects for WordPress
- * Plugin URI:      https://magiiic.org/
- * Description:     Showcase open source projects
+ * Plugin URI:      https://magiiic.org/projects/osprojects/
+ * Update URI:      https://github.com/magicoli/osprojects
+ * Description:     A comprehensive WordPress plugin for showcasing and managing open source projects with automated GitHub integration, project metadata management, and multilingual support.
  * Author:          Magiiic
  * Author URI:      https://magiiic.com/
  * Text Domain:     osprojects
