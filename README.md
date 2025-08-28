@@ -38,6 +38,14 @@ A comprehensive WordPress plugin for showcasing and managing open source project
 - **Filter & Search**: Advanced filtering by categories, status, and project attributes
 - **Manual Refresh**: On-demand project metadata refresh with progress tracking
 
+## Screenshots
+
+1. This screen shot description corresponds to screenshot-1.(png|jpg|jpeg|gif). Note that the screenshot is taken from
+the /assets directory or the directory that contains the stable readme.txt (tags or trunk). Screenshots in the /assets
+directory take precedence. For example, `/assets/screenshot-1.png` would win over `/tags/4.3/screenshot-1.png`
+(or jpg, jpeg, gif).
+2. This is the second screen shot
+
 ## Requirements
 
 - **WordPress**: 5.0 or higher
@@ -101,7 +109,11 @@ Override default templates by creating files in your theme:
 - `single-project.php` - Single project template
 - `archive-project.php` - Projects archive template
 
-## GitHub API Rate Limiting
+## Troubleshooting
+
+### GitHub API Rate Limiting
+- **Problem**: Import fails with rate limit errors
+- **Solution**: Add GitHub API token as described above
 
 For users with many repositories, you may encounter GitHub API rate limits. To increase limits:
 
@@ -112,23 +124,15 @@ For users with many repositories, you may encounter GitHub API rate limits. To i
    wp option update osprojects-settings --format=json '{"github_api_token":"your_token_here"}'
    ```
 
-## Troubleshooting
-
-### Common Issues
-
-#### GitHub Rate Limiting
-- **Problem**: Import fails with rate limit errors
-- **Solution**: Add GitHub API token as described above
-
-#### Repository Access Errors
+### Repository Access Errors
 - **Problem**: Projects marked as ignored
 - **Solution**: Check repository URLs and access permissions
 
-#### Memory Issues with Large Imports
+### Memory Issues with Large Imports
 - **Problem**: PHP memory limit exceeded
 - **Solution**: Increase PHP memory limit or import in smaller batches
 
-#### Gutenberg Save Issues
+### Gutenberg Save Issues
 - **Problem**: Project saves hang in Gutenberg editor
 - **Solution**: Try clearing browser cookies or disable Gutenberg in plugin settings
 

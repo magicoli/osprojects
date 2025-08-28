@@ -1,16 +1,16 @@
 # Installation
 
-## Requirements
+### Requirements
 
-- **WordPress**: 5.0 or higher
-- **PHP**: 7.4 or higher
-- **Dependencies**: Automatically included with the plugin
+* **WordPress**: 5.0 or higher
+* **PHP**: 7.4 or higher
+* **Dependencies**: Automatically included with the plugin
   - `czproject/git-php` - Git repository interaction
   - `erusev/parsedown` - Markdown parsing
 
-## Installation
+### Installation
 
-### Recommended: Download Release
+**Recommended: Download Release**
 
 1. Download the latest release from [GitHub Releases](https://github.com/magicoli/osprojects/releases)
 2. Upload the plugin ZIP file through WordPress admin:
@@ -20,21 +20,21 @@
    - Click **Install Now**
 3. Activate the plugin through the **Plugins** screen in WordPress
 
-### Alternative: Manual Upload
+**Alternative: Manual Upload**
 
 1. Download and extract the latest release
 2. Upload the `osprojects` folder to `/wp-content/plugins/`
 3. Activate the plugin through the **Plugins** screen in WordPress
 
-## Configuration
+### Configuration
 
-### Basic Setup
+#### Basic Setup
 
 1. Navigate to **Open Source Projects > Settings** in your WordPress admin
 2. Configure the project URL prefix (default: `projects`)
 3. Choose between Gutenberg or Classic editor mode
 
-### GitHub API Token (Optional but Recommended)
+#### GitHub API Token (Optional but Recommended)
 
 For users importing many repositories, you may encounter GitHub API rate limits. To increase limits:
 
@@ -56,7 +56,7 @@ For users importing many repositories, you may encounter GitHub API rate limits.
    WHERE option_name = 'osprojects-settings';
    ```
 
-### URL Structure Configuration
+#### URL Structure Configuration
 
 By default, projects will be available at `/projects/`. To customize this:
 
@@ -66,13 +66,13 @@ By default, projects will be available at `/projects/`. To customize this:
    - Go to **Settings > Permalinks**
    - Click **Save Changes** (even without making changes)
 
-### Editor Mode
+#### Editor Mode
 
 **Gutenberg Mode** is enabled by default if your theme allows it. You can disable it to force **Classic Mode**.
 
 Note: If you experience saving issues in Gutenberg mode, try clearing browser cookies or switch to Classic mode.
 
-## First Steps After Installation
+### First Steps After Installation
 
 1. **Import Your First Repository**:
    - Go to **Tools > Import**
@@ -88,56 +88,9 @@ Note: If you experience saving issues in Gutenberg mode, try clearing browser co
    - Visit `/projects/` on your site to see the project archive
    - Visit individual project pages to see project details
 
-## Troubleshooting Installation
+### Security Considerations
 
-### Plugin Activation Fails
-
-- Check that your server meets the minimum requirements
-- Ensure the `lib/` directory and its contents are present
-- Check WordPress error logs for specific error messages
-
-### Missing Dependencies
-
-If you see "Class not found" errors:
-- Re-download the plugin from the official release
-- Ensure the `lib/` directory contains the required dependencies
-- Avoid downloading from the source repository (use releases instead)
-
-### Permalink Issues
-
-If project pages show 404 errors:
-1. Go to **Settings > Permalinks**
-2. Click **Save Changes**
-3. Clear any caching plugins
-
-### Memory Issues
-
-For large imports, you may need to increase PHP memory:
-```php
-// In wp-config.php
-ini_set('memory_limit', '512M');
-```
-
-## Security Considerations
-
-- Only download the plugin from official GitHub releases
-- Keep the plugin updated to the latest version
-- Use GitHub personal access tokens instead of passwords
-- Regularly review imported projects for any issues
-
-## Uninstallation
-
-To completely remove the plugin:
-
-1. Deactivate the plugin from the WordPress admin
-2. Delete all project posts (if desired):
-   - Go to **Open Source Projects > All Projects**
-   - Select all projects and move to trash
-   - Empty trash
-3. Uninstall the plugin from **Plugins > Installed Plugins**
-4. Optionally, clean up database options:
-   ```bash
-   wp option delete osprojects-settings
-   ```
-
-Note: Project data will remain in your database unless manually removed.
+* Only download the plugin from official GitHub releases
+* Keep the plugin updated to the latest version
+* Use GitHub personal access tokens instead of passwords
+* Regularly review imported projects for any issues
