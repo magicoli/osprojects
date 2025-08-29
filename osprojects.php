@@ -43,3 +43,8 @@ $OSprojects = new OSProjects();
 $OSProjectsSettings    = new OSProjectsSettings();
 $OSProjectsProject     = new OSProjectsProject();
 $OSProjectsAdminImport = new OSProjectsAdminImport();
+
+// Add WP-CLI command for debugging ReclaimDetails
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	require_once OSPROJECTS_PLUGIN_PATH . 'includes/class-cli-debug.php';
+}
