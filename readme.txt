@@ -18,11 +18,12 @@ A comprehensive WordPress plugin for showcasing and managing open source project
 == Features ==
 
 = Core Functionality =
-- **Custom Post Type**: Dedicated `project` post type for organizing open source projects
-- **GitHub Integration**: Automated import and synchronization of GitHub repositories
-- **Project Metadata**: Automatic extraction of project details (license, latest release, last commit, etc.)
-- **Taxonomies**: Project categories and tags for better organization
-- **Multi-language Support**: Built-in internationalization with French translations included
+
+1. **Custom Post Type**: Dedicated `project` post type for organizing open source projects
+2. **GitHub Integration**: Automated import and synchronization of GitHub repositories
+3. **Project Metadata**: Automatic extraction of project details (license, latest release, last commit, etc.)
+4. **Taxonomies**: Project categories and tags for better organization
+5. **Multi-language Support**: Built-in internationalization with French translations included
 
 = GitHub Import System =
 - **Bulk Repository Import**: Import multiple repositories from any GitHub user/organization
